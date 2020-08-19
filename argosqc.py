@@ -1,7 +1,7 @@
 """
 Spyder Editor
 
-Python Version tested: Python 3.6
+Python Version tested: Python 2.7.3
 
 Required Dependencies: Numpy, time
 
@@ -22,8 +22,20 @@ Checks Performed:
     Stuck Sensor
     Wave Height Verses Average Wave Period    
 
+Flag Convention as follows:
+ 0 = no QC performed
+ 1 = good data
+ 2 = prob. good 
+ 3 = prob. bad
+ 4 = bad data
+ 5 = invalid time
+ 6 = unused
+ 7 = unused
+ 8 = interpolated value (unused but planned)
+
 Author: Tobias Ferreira
 Organization: Brazilian Navy, BR
+Date: May 03th 2014  
 Version: 1.1 
     
 """
@@ -38,48 +50,23 @@ import numpy as np
 import time
 import math
 
-
-def valores():
-    
-    rWvht=[0,19.9]
-    rDpd=[1.7,30]
-    rMwd=[0,360]
-    rWspd=[0,59]
-    rWdir=[0,360]
-    rGust=[0,59]
-    rAtmp=[-39,59]
-    rPres=[501,1099]
-    rDewp=[-29,39]
-    rWtmp=[-3,29]
-    rApd=[1.7,30]
-    
-    sigmaWvht=6
-    sigmaPres=21
-    sigmaAtmp=11
-    sigmaWspd=25
-    sigmaWtmp=8.6
-    
-    return rWvht,rDpd,rMwd,rWspd,rWdir,rGust,rAtmp,rPres,rDewp,rWtmp,rApd,sigmaWvht,sigmaPres,sigmaAtmp,sigmaWspd,sigmaWtmp
-
 def valoresargos():
 
-    rWvht=[0,19.9]
-    rWmax=[0,19.9]
+    rWvht=[0.1,19.9]
+    rWmax=[0.1,19.9]
     rDpd=[1.7,30]
     rMwd=[0,360]
-    rWspd=[0,59]
+    rWspd=[0.1,59]
     rWdir=[0,360]
-    rGust=[0,59]
+    rGust=[0.1,59]
     rAtmp=[-39,59]
     rPres=[501,1099]
     rDewp=[-29,39]
-    rWtmp=[-3,29]
+    rWtmp=[-3,39]
     rHumi=[25,102]
     rCvel=[-4990,4990]
     rCdir=[0,360]
     rApd=[1.7,30]
-
-
     
     sigmaWvht=6
     sigmaHumi=20
@@ -112,7 +99,7 @@ def valoresclima():
     r3Atmp=[15,48]
     r1Pres=[950,1050]
     r1Dewp=[-29,39]
-    r1Wtmp=[-3,29]
+    r1Wtmp=[-3,39]
     r1Apd=[1.7,20]
     r1Cvel=[-2500,2500]
     
@@ -151,7 +138,6 @@ def timecheck(Epoch):
 
     #####################
     #end Time check section
-
 
 
 ###############################################################################
@@ -443,7 +429,7 @@ def batsensorcheck(Epoch,battery,pres,flagp,idf):
 
      
     for i in range(len(Epoch)):
-        if float(battery[i])<=10.5 and battery[i]!=None and battery[i]!='-9999' and battery[i]!=-99999:
+        if battery[i]<=10.5 and battery[i]!=None and battery[i]!=-9999 and battery[i]!=-99999:
             flagp[i]=4
             idf[i]='5'
         else:
@@ -544,298 +530,7 @@ def stucksensorcheck (Epoch,var,flag,nev,idf):
 # Return: Wdirflag,Wspdflag,Gustflag,Wdir,Wspd,Gust,Wdirflagid,Wspdflagid,Gustflagid
 ########################################################################################
 
-def relatedmeascheck2(Epoch,Wdir1,Wspd1,Gust1,zwind1,Wdir2,Wspd2,Gust2,zwind2,Wspd1flag, Wdir1flag,Gust1flag,Wspd2flag, Wdir2flag,Gust2flag,Wdir1flagid,Wspd1flagid,Gust1flagid,Wdir2flagid,Wspd2flagid,Gust2flagid): 
-
-    # Creating the variables for the best anemometer
-    Wdir= [0]*len(Epoch)
-    Wspd= [0]*len(Epoch)
-    Gust= [0]*len(Epoch)
-
-    # Creating the flags for the best anemometer
-    Wspdflag= [0]*len(Epoch)   
-    Gustflag= [0]*len(Epoch)   
-    Wdirflag= [0]*len(Epoch)
-    Wspdflagid= [0]*len(Epoch)   
-    Gustflagid= [0]*len(Epoch)   
-    Wdirflagid= [0]*len(Epoch)
-
-
-
-    for i in range(len(Epoch)):
-        if Wspd1flag[i]!=4:
-            Wspd1[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-            Gust1[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-
-            if Wspd2flag[i]!=4:
-                Wspd2[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd2
-                Gust2[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd2
-
-                if Wspd1flag[i-1]!=4 and Wspd2flag[i-1]!=4:
-                    delta_Wdir= abs(Wdir1[i]-Wdir2[i])
-                    delta_Wdir1=abs(Wdir1[i]-Wdir1[i-1])
-                    delta_Wdir2=abs(Wdir2[i]-Wdir2[i-1])
-
-                    if Wspd1[i] > 2.5 and Wspd2[i] > 2.5:
-                        if delta_Wdir > 25:
-                            if delta_Wdir1<=delta_Wdir2:
-                                Wdir[i]=Wdir1[i]
-                                Wspd[i]=Wspd1[i]
-                                Gust[i]=Gust1[i]
-                                Wspdflag[i]=Wspd1flag[i]
-                                Wdirflag[i]=Wdir1flag[i]
-                                Gustflag[i]=Gust1flag[i]
-                                Wspdflagid[i]=Wspd1flagid[i]
-                                Wdirflagid[i]=Wdir1flagid[i]
-                                Gustflagid[i]=Gust1flagid[i]
-
-                            else:
-                                Wdir[i]=Wdir2[i]
-                                Wspd[i]=Wspd2[i]
-                                Gust[i]=Gust2[i]
-                                Wspdflag[i]=Wspd2flag[i]
-                                Wdirflag[i]=Wdir2flag[i]
-                                Gustflag[i]=Gust2flag[i]
-                                Wspdflagid[i]=Wspd2flagid[i]
-                                Wdirflagid[i]=Wdir2flagid[i]
-                                Gustflagid[i]=Gust2flagid[i]                                
-                                continue
-                        else:
-                            if Wspd1[i]>=Wspd2[i]:      #should be sensor hierchy.
-                                Wdir[i]=Wdir1[i]
-                                Wspd[i]=Wspd1[i]
-                                Gust[i]=Gust1[i]
-                                Wspdflag[i]=Wspd1flag[i]
-                                Wdirflag[i]=Wdir1flag[i]
-                                Gustflag[i]=Gust1flag[i]
-                                Wspdflagid[i]=Wspd1flagid[i]
-                                Wdirflagid[i]=Wdir1flagid[i]
-                                Gustflagid[i]=Gust1flagid[i]
-                            else:
-                                Wdir[i]=Wdir2[i]
-                                Wspd[i]=Wspd2[i]
-                                Gust[i]=Gust2[i]
-                                Wspdflag[i]=Wspd2flag[i]
-                                Wdirflag[i]=Wdir2flag[i]
-                                Gustflag[i]=Gust2flag[i]
-                                Wspdflagid[i]=Wspd2flagid[i]
-                                Wdirflagid[i]=Wdir2flagid[i]
-                                Gustflagid[i]=Gust2flagid[i]  
-                                continue
-                            continue
-                    else:
-                        if Wspd1[i]>=Wspd2[i]:                  #should be sensor hierchy.
-                            Wdir[i]=Wdir1[i]
-                            Wspd[i]=Wspd1[i]
-                            Gust[i]=Gust1[i]
-                            Wspdflag[i]=Wspd1flag[i]
-                            Wdirflag[i]=Wdir1flag[i]
-                            Gustflag[i]=Gust1flag[i]
-                            Wspdflagid[i]=Wspd1flagid[i]
-                            Wdirflagid[i]=Wdir1flagid[i]
-                            Gustflagid[i]=Gust1flagid[i]
-
-                        else:
-                            Wdir[i]=Wdir2[i]
-                            Wspd[i]=Wspd2[i]
-                            Gust[i]=Gust2[i]
-                            Wspdflag[i]=Wspd2flag[i]
-                            Wdirflag[i]=Wdir2flag[i]
-                            Gustflag[i]=Gust2flag[i]
-                            Wspdflagid[i]=Wspd2flagid[i]
-                            Wdirflagid[i]=Wdir2flagid[i]
-                            Gustflagid[i]=Gust2flagid[i]
-                            continue                                
-                        continue                                  
-                else:
-                    if Wspd1flag[i-1]!=4 and Wspd2flag[i-1]==4:
-                        Wdir[i]=Wdir1[i]
-                        Wspd[i]=Wspd1[i]
-                        Gust[i]=Gust1[i]                        
-                        Wspdflag[i]=Wspd1flag[i]
-                        Wdirflag[i]=Wdir1flag[i]
-                        Gustflag[i]=Gust1flag[i]
-                        Wspdflagid[i]=Wspd1flagid[i]
-                        Wdirflagid[i]=Wdir1flagid[i]
-                        Gustflagid[i]=Gust1flagid[i]
-                        
-                    elif Wspd1flag[i-1]==4 and Wspd2flag[i-1]!=4:
-                        Wdir[i]=Wdir2[i]
-                        Wspd[i]=Wspd2[i]
-                        Gust[i]=Gust2[i]
-                        Wspdflag[i]=Wspd2flag[i]
-                        Wdirflag[i]=Wdir2flag[i]
-                        Gustflag[i]=Gust2flag[i]
-                        Wspdflagid[i]=Wspd2flagid[i]
-                        Wdirflagid[i]=Wdir2flagid[i]
-                        Gustflagid[i]=Gust2flagid[i]  
-                    else:
-                        if Wspd1[i]>=Wspd2[i]:
-                            Wdir[i]=Wdir1[i]
-                            Wspd[i]=Wspd1[i]
-                            Gust[i]=Gust1[i]                        
-                            Wspdflag[i]=Wspd1flag[i]
-                            Wdirflag[i]=Wdir1flag[i]
-                            Gustflag[i]=Gust1flag[i]
-                            Wspdflagid[i]=Wspd1flagid[i]
-                            Wdirflagid[i]=Wdir1flagid[i]
-                            Gustflagid[i]=Gust1flagid[i]
-                            continue
-                        else:
-                            Wdir[i]=Wdir2[i]
-                            Wspd[i]=Wspd2[i]
-                            Gust[i]=Gust2[i]
-                            Wspdflag[i]=Wspd2flag[i]
-                            Wdirflag[i]=Wdir2flag[i]
-                            Gustflag[i]=Gust2flag[i]
-                            Wspdflagid[i]=Wspd2flagid[i]
-                            Wdirflagid[i]=Wdir2flagid[i]
-                            Gustflagid[i]=Gust2flagid[i]  
-                            continue                           
-                        continue
-            else:
-                Wdir[i]=Wdir1[i]
-                Wspd[i]=Wspd1[i]
-                Gust[i]=Gust1[i]
-                Wspdflag[i]=Wspd1flag[i]
-                Wdirflag[i]=Wdir1flag[i]
-                Gustflag[i]=Gust1flag[i]
-                Wspdflagid[i]=Wspd1flagid[i]
-                Wdirflagid[i]=Wdir1flagid[i]
-                Gustflagid[i]=Gust1flagid[i]
-                continue
-        else:                    
-            if Wspd2flag[i]!=4:
-                Wspd2[i]=Wspd2[i]*((10/zwind2)**0.11)          #Check this for heights. should use 10/zwspd1
-                Gust2[i]=Gust2[i]*((10/zwind2)**0.11)          #Check this for heights. should use 10/zwspd1         
-                Wdir[i]=Wdir2[i]
-                Wspd[i]=Wspd2[i]
-                Gust[i]=Gust2[i]
-                Wspdflag[i]=Wspd2flag[i]
-                Wdirflag[i]=Wdir2flag[i]
-                Gustflag[i]=Gust2flag[i]
-                Wspdflagid[i]=Wspd2flagid[i]
-                Wdirflagid[i]=Wdir2flagid[i]
-                Gustflagid[i]=Gust2flagid[i]
-            else:
-                Wdir[i]=Wdir1[i]
-                Wspd[i]=Wspd1[i]
-                Gust[i]=Gust1[i]
-                Wspdflag[i]=Wspd1flag[i]
-                Wdirflag[i]=Wdir1flag[i]
-                Gustflag[i]=Gust1flag[i]
-                Wspdflagid[i]=Wspd1flagid[i]
-                Wdirflagid[i]=Wdir1flagid[i]
-                Gustflagid[i]=Gust1flagid[i]
-                continue
-            continue
-        
-
-    return Wdirflag,Wspdflag,Gustflag,Wdir,Wspd,Gust,Wdirflagid,Wspdflagid,Gustflagid
-
-    #####################
-    #end of related measurement check
-
-
-#######################################################################################    
-# Simpler Related Measurement Check
-# Compares the values of the two anemometers to find the best one.
-#
-# Required input:
-# - Epoch: Data/Time in Epoch date
-# - Wdir1: wind direction for anemometer 1
-# - Wspd1: wind speed for anemometer 1
-# - Gust1: gust speed for anemometer 1
-# - zwind1: Height of the anemometer 1
-# - Wdir2: wind direction for anemometer 2
-# - Wspd2: wind speed for anemometer 2
-# - Gust2: gust speed for anemometer 2
-# - zwind2: Height of the anemometer 2
-# - Wspd1flag: matrix of flag for wind speed from anemometer 1
-# - Wdir1flag: matrix of flag for wind direction from anemometer 1 
-# - Gust1flag: matrix of flag for gust speed from anemometer 1 
-# - Wspd2flag: matrix of flag for wind speed from anemometer 2 
-# - Wdir2flag: matrix of flag for wind direction from anemometer 2 
-# - Gust2flag: matrix of flag for gust speed from anemometer 2 
-# - Wdir1flagid: flag id for Wdir1. '52' --> letter that represents the flag
-# - Wspd1flagid: flag id for Wspd1. '52' --> letter that represents the flag
-# - Gust1flagid: flag id for Gust1. '52' --> letter that represents the flag
-# - Wdir2flagid: flag id for Wdir2. '52' --> letter that represents the flag
-# - Wspd2flagid: flag id for Wspd2. '52' --> letter that represents the flag
-# - Gust2flagid: flag id for Gust2. '52' --> letter that represents the flag
-#
-#
-# Required checks: Range, Missing value, Wind Speed x Gust
-#
-# Return: Wdirflag,Wspdflag,Gustflag,Wdir,Wspd,Gust,Wdirflagid,Wspdflagid,Gustflagid
-########################################################################################
-
-def relatedmeascheck(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1flag,Gust1flag,Wspd2flag, Wdir2flag,Gust2flag,Wdir1flagid,Wspd1flagid,Gust1flagid,Wdir2flagid,Wspd2flagid,Gust2flagid,dadosboia): 
-
-    zwind1,zwind2=[],[]
-    for i in range(len(dadosboia)):
-        if dadosboia[i][1]=='anemometro' and dadosboias[i][4]==1:
-            zwind1.append(dadosboia[i][3])
-        elif dadosboia[i][1]=='anemometro' and dadosboias[i][4]==2:
-            zwind2.append(dadosboia[i][3])
-    
-    if zwind1==[]:
-        zwind1=5
-    if zwind2==[]:
-        zwind2=5
-    
-    # Creating the variables for the best anemometer
-    Wdir= [0]*len(Epoch)
-    Wspd= [0]*len(Epoch)
-    Gust= [0]*len(Epoch)
-
-    # Creating the flags for the best anemometer
-    Wspdflag= [0]*len(Epoch)   
-    Gustflag= [0]*len(Epoch)   
-    Wdirflag= [0]*len(Epoch)
-    Wspdflagid= [0]*len(Epoch)   
-    Gustflagid= [0]*len(Epoch)   
-    Wdirflagid= [0]*len(Epoch)
-
-
-
-    for i in range(len(Epoch)):
-        if Wspd1flag[i]!=4:
-            Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-            Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-            Wdir[i]=Wdir1[i]
-            Wspdflag[i]=Wspd1flag[i]
-            Wdirflag[i]=Wdir1flag[i]
-            Gustflag[i]=Gust1flag[i]
-            Wspdflagid[i]=Wspd1flagid[i]
-            Wdirflagid[i]=Wdir1flagid[i]
-            Gustflagid[i]=Gust1flagid[i]
-        else:
-            if Wspd2flag[i]!=4:
-                Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
-                Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
-                Wdir[i]=Wdir2[i]
-                Wspdflag[i]=Wspd2flag[i]
-                Wdirflag[i]=Wdir2flag[i]
-                Gustflag[i]=Gust2flag[i]
-                Wspdflagid[i]=Wspd2flagid[i]
-                Wdirflagid[i]=Wdir2flagid[i]
-                Gustflagid[i]=Gust2flagid[i]
-            else:
-                Wspd[i]=Wspd1[i]
-                Gust[i]=Gust1[i]
-                Wdir[i]=Wdir1[i]
-                Wspdflag[i]=Wspd1flag[i]
-                Wdirflag[i]=Wdir1flag[i]
-                Gustflag[i]=Gust1flag[i]
-                Wspdflagid[i]=Wspd1flagid[i]
-                Wdirflagid[i]=Wdir1flagid[i]
-                Gustflagid[i]=Gust1flagid[i]
-                continue
-            continue
-
-    return Wdirflag,Wspdflag,Gustflag,Wdir,Wspd,Gust,Wdirflagid,Wspdflagid,Gustflagid
-
-def relatedmeascheck3(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1flag,Gust1flag,Wspd2flag, Wdir2flag,Gust2flag,Wdir1flagid,Wspd1flagid,Gust1flagid,Wdir2flagid,Wspd2flagid,Gust2flagid): 
+def relatedmeascheck4(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1flag,Gust1flag,Wspd2flag, Wdir2flag,Gust2flag,Wdir1flagid,Wspd1flagid,Gust1flagid,Wdir2flagid,Wspd2flagid,Gust2flagid,anemomet):
 
     zwind1,zwind2=[],[]
 #    for i in range(len(dadosboia)):
@@ -843,15 +538,14 @@ def relatedmeascheck3(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
 #            zwind1.append(dadosboia[i][3])
 #        elif dadosboia[i][1]=='anemometro' and dadosboias[i][4]==2:
 #            zwind2.append(dadosboia[i][3])
-    
+
     if zwind1==[]:
         zwind1=4.7
     if zwind2==[]:
-        zwind2=3.4
-    
+        zwind2=3.4    
+
 #    if boi=='cabofrio':
 #        zwind1=3
-    
     
     # Creating the variables for the best anemometer
     Wdir= [0]*len(Epoch)
@@ -867,41 +561,189 @@ def relatedmeascheck3(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
     Wdirflagid= [0]*len(Epoch)
 
 
-
+    print('inicio')
     for i in range(len(Epoch)):
-        if Wspd1flag[i]!=4:
-            Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-            Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
-            Wdir[i]=Wdir1[i]
-            Wspdflag[i]=Wspd1flag[i]
-            Wdirflag[i]=Wdir1flag[i]
-            Gustflag[i]=Gust1flag[i]
-            Wspdflagid[i]=Wspd1flagid[i]
-            Wdirflagid[i]=Wdir1flagid[i]
-            Gustflagid[i]=Gust1flagid[i]
-        else:
-            if Wspd2flag[i]!=4:
-                Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
-                Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
-                Wdir[i]=Wdir2[i]
-                Wspdflag[i]=Wspd2flag[i]
-                Wdirflag[i]=Wdir2flag[i]
-                Gustflag[i]=Gust2flag[i]
-                Wspdflagid[i]=Wspd2flagid[i]
-                Wdirflagid[i]=Wdir2flagid[i]
-                Gustflagid[i]=Gust2flagid[i]
-            else:
-                Wspd[i]=Wspd1[i]
-                Gust[i]=Gust1[i]
-                Wdir[i]=Wdir1[i]
-                Wspdflag[i]=Wspd1flag[i]
-                Wdirflag[i]=Wdir1flag[i]
-                Gustflag[i]=Gust1flag[i]
-                Wspdflagid[i]=Wspd1flagid[i]
-                Wdirflagid[i]=Wdir1flagid[i]
-                Gustflagid[i]=Gust1flagid[i]
-                continue
-            continue
+        tr=0
+        for ii in range(len(anemomet[0])):
+            if Epoch[i]>float(anemomet[0][ii]) and Epoch[i]<float(anemomet[1][ii]) and tr!=1:
+
+                tr=1
+                if anemomet[2][ii]=='0':
+                    #print(anemomet[2][ii])
+                    if  Wspd1flag[i]!=4:
+                        Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=4
+                        Wdirflag[i]=4
+                        Gustflag[i]=4
+                        Wspdflagid[i]='11'
+                        Wdirflagid[i]='11'
+                        Gustflagid[i]='11'
+                    else:
+                        Wspd[i]=Wspd1[i]
+                        Gust[i]=Gust1[i]
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=Wdir1flag[i]
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]=Wdir1flagid[i]
+                        Gustflagid[i]=Gust1flagid[i]
+                elif anemomet[2][ii]=='1':
+#                    print(anemomet[2][ii])
+                    if  Wspd1flag[i]!=4:
+                        Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=Wdir1flag[i]
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]=Wdir1flagid[i]
+                        Gustflagid[i]=Gust1flagid[i]
+                    else:
+                        Wspd[i]=Wspd1[i]
+                        Gust[i]=Gust1[i]
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=Wdir1flag[i]
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]=Wdir1flagid[i]
+                        Gustflagid[i]=Gust1flagid[i]
+                elif anemomet[2][ii]=='2':
+#                    print(anemomet[2][ii])
+                    if  Wspd2flag[i]!=4:
+                        Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Wdir[i]=Wdir2[i]
+                        Wspdflag[i]=Wspd2flag[i]
+                        Wdirflag[i]=Wdir2flag[i]
+                        Gustflag[i]=Gust2flag[i]
+                        Wspdflagid[i]=Wspd2flagid[i]
+                        Wdirflagid[i]=Wdir2flagid[i]
+                        Gustflagid[i]=Gust2flagid[i]
+                    else:
+                        Wspd[i]=Wspd2[i]
+                        Gust[i]=Gust2[i]
+                        Wdir[i]=Wdir2[i]
+                        Wspdflag[i]=Wspd2flag[i]
+                        Wdirflag[i]=Wdir2flag[i]
+                        Gustflag[i]=Gust2flag[i]
+                        Wspdflagid[i]=Wspd2flagid[i]
+                        Wdirflagid[i]=Wdir2flagid[i]
+                        Gustflagid[i]=Gust2flagid[i]
+                elif anemomet[2][ii]=='3':
+                    if Wspd1flag[i]!=4:
+                        Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=Wdir1flag[i]
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]=Wdir1flagid[i]
+                        Gustflagid[i]=Gust1flagid[i]
+                    else:
+                        if Wspd2flag[i]!=4:
+                            Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                            Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                            Wdir[i]=Wdir2[i]
+                            Wspdflag[i]=Wspd2flag[i]
+                            Wdirflag[i]=Wdir2flag[i]
+                            Gustflag[i]=Gust2flag[i]
+                            Wspdflagid[i]=Wspd2flagid[i]
+                            Wdirflagid[i]=Wdir2flagid[i]
+                            Gustflagid[i]=Gust2flagid[i]
+                        else:
+                            Wspd[i]=Wspd1[i]
+                            Gust[i]=Gust1[i]
+                            Wdir[i]=Wdir1[i]
+                            Wspdflag[i]=Wspd1flag[i]
+                            Wdirflag[i]=Wdir1flag[i]
+                            Gustflag[i]=Gust1flag[i]
+                            Wspdflagid[i]=Wspd1flagid[i]
+                            Wdirflagid[i]=Wdir1flagid[i]
+                            Gustflagid[i]=Gust1flagid[i]
+                            continue
+                        continue
+                else:
+                    if Wspd1flag[i]!=4:
+                        Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        direc_vento=Wdir1[i]+180
+                        if direc_vento>=360:
+                            Wdir[i]=direc_vento-360
+                        else:
+                            Wdir[i]=direc_vento
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=2
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]='63'
+                        Gustflagid[i]=Gust1flagid[i]
+                    else:
+                        if Wspd2flag[i]!=4:
+                            Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                            Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                            direc_vento=Wdir2[i]+180
+                            if direc_vento>=360:
+                                Wdir[i]=direc_vento-360
+                            else:
+                                Wdir[i]=direc_vento
+                            Wspdflag[i]=Wspd2flag[i]
+                            Wdirflag[i]=2
+                            Gustflag[i]=Gust2flag[i]
+                            Wspdflagid[i]='63'
+                            Wdirflagid[i]=Wdir2flagid[i]
+                            Gustflagid[i]=Gust2flagid[i]
+                        else:
+                            Wspd[i]=Wspd1[i]
+                            Gust[i]=Gust1[i]
+                            Wdir[i]=Wdir1[i]
+                            Wspdflag[i]=Wspd1flag[i]
+                            Wdirflag[i]=Wdir1flag[i]
+                            Gustflag[i]=Gust1flag[i]
+                            Wspdflagid[i]=Wspd1flagid[i]
+                            Wdirflagid[i]=Wdir1flagid[i]
+                            Gustflagid[i]=Gust1flagid[i]
+                            continue
+                        continue
+            elif tr!=1:                        
+                if Wspd1flag[i]!=4:
+                    Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                    Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
+                    Wdir[i]=Wdir1[i]
+                    Wspdflag[i]=Wspd1flag[i]
+                    Wdirflag[i]=Wdir1flag[i]
+                    Gustflag[i]=Gust1flag[i]
+                    Wspdflagid[i]=Wspd1flagid[i]
+                    Wdirflagid[i]=Wdir1flagid[i]
+                    Gustflagid[i]=Gust1flagid[i]
+                else:
+                    if Wspd2flag[i]!=4:
+                        Wspd[i]=Wspd2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Gust[i]=Gust2[i]*((10/zwind2)**0.11)  #Check this for heights. should use 10/Zwspd1
+                        Wdir[i]=Wdir2[i]
+                        Wspdflag[i]=Wspd2flag[i]
+                        Wdirflag[i]=Wdir2flag[i]
+                        Gustflag[i]=Gust2flag[i]
+                        Wspdflagid[i]=Wspd2flagid[i]
+                        Wdirflagid[i]=Wdir2flagid[i]
+                        Gustflagid[i]=Gust2flagid[i]
+                    else:
+                        Wspd[i]=Wspd1[i]
+                        Gust[i]=Gust1[i]
+                        Wdir[i]=Wdir1[i]
+                        Wspdflag[i]=Wspd1flag[i]
+                        Wdirflag[i]=Wdir1flag[i]
+                        Gustflag[i]=Gust1flag[i]
+                        Wspdflagid[i]=Wspd1flagid[i]
+                        Wdirflagid[i]=Wdir1flagid[i]
+                        Gustflagid[i]=Gust1flagid[i]
+                        continue
+                    continue
 
     return Wdirflag,Wspdflag,Gustflag,Wdir,Wspd,Gust,Wdirflagid,Wspdflagid,Gustflagid
 
@@ -955,6 +797,10 @@ def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
 
     return flagh, idf
 
+
+
+
+
     #####################
     #end Wave Height Versus Average Wave Period check
 
@@ -978,6 +824,37 @@ def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
 #
 # Return: flag,idf
 #########################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
@@ -1085,6 +962,269 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
             else:
                 continue
 
+    
+    
+    return flag,idf
+
+########################################################################################
+# Time continuity adcp
+# Check is to verify if the data has consistency in the time
+#
+# Required input:
+# - Epoch: Data/Time in Epoch date
+# - var: variable
+# - flag: matrix of flag for the variable
+# - sigma: value for the contnuity equation (normally, is related to std deviation)
+# - idf= flag id. '8' --> letter that represents the flag
+# - rt: toggle for RTQC. If it is 0, RTQC
+#
+# Required checks: Range Check, Missing value check, Stuck Sensor check
+#
+# Return: flag,idf
+#########################################################################################
+
+
+def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
+    
+    
+    fwd_ep_gd,bck_ep_gd = float(Epoch[0]),float(Epoch[-1])
+    fwd_gd,bck_gd = var[0],var[-1]
+    fwd_gdf,bck_gdf = flag[0],flag[-1]
+    fwsp_qc,bksp_qc = [0]*len(Epoch),[0]*len(Epoch)
+
+    for i in range(1,len(Epoch)):
+        delta_Epoch = abs(float(Epoch[i]) - fwd_ep_gd)
+        deltacurrent= abs(float(var[i]) - float(fwd_gd))
+        if delta_Epoch== 3600*3 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>249.6:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>213.9:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue
+        elif delta_Epoch== 3600*2 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>193.5:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>165.9:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue
+        elif delta_Epoch== 3600*1 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>131.4:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>112.6:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue            
+        else:
+            fwd_gd = var[i]
+            fwd_ep_gd = float(Epoch[i])
+            fwd_gdf=flag[i]   
+            continue
+
+    for i in range(-2,-len(Epoch),-1):
+        delta_Epoch = abs(float(Epoch[i]) - int(bck_ep_gd))
+        deltacurrent= abs(float(var[i]) - float(bck_gd))
+        if delta_Epoch == 3600*3 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>249.6:
+                bksp_qc[i] = 4
+            elif deltacurrent>213.9:
+                bksp_qc[i] = 3
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        elif delta_Epoch == 3600*2 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>193.5:
+                bksp_qc[i] = 4
+            elif deltacurrent>165.9:
+                bksp_qc[i] = 3
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        elif delta_Epoch == 3600*1 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>131.4:
+                bksp_qc[i] = 4
+            elif deltacurrent>112.6:
+                bksp_qc[i] = 3                     
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        else:
+            bck_gd = var[i]
+            bck_ep_gd = float(Epoch[i])
+            bck_gdf=flag[i]
+    
+    #TODO: Might consider a toggle since you want to be able to run this in realtime. 
+    #OK
+    for i in range(0, len(Epoch)):
+        if fwsp_qc[i] == 4 or bksp_qc[i] == 4:
+            flag[i] = 4
+            idf[i]='10'
+            flag_dir[i]=4
+            idf_dir[i]='10'
+
+        elif fwsp_qc[i] == 3 or bksp_qc[i] == 3:
+            flag[i] = 3             
+            idf[i]='61'                 
+            flag_dir[i]=3
+            idf_dir[i]='61'
+
+        else:
+            continue
+    
+    
+    return flag,idf, flag_dir, idf_dir
+
+
+
+
+########################################################################################
+# Time continuity adcp
+# Check is to verify if the data has consistency in the time
+#
+# Required input:
+# - Epoch: Data/Time in Epoch date
+# - var: variable
+# - flag: matrix of flag for the variable
+# - sigma: value for the contnuity equation (normally, is related to std deviation)
+# - idf= flag id. '8' --> letter that represents the flag
+# - rt: toggle for RTQC. If it is 0, RTQC
+#
+# Required checks: Range Check, Missing value check, Stuck Sensor check
+#
+# Return: flag,idf
+#########################################################################################
+
+
+def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
+
+    
+    fwd_ep_gd,bck_ep_gd = float(Epoch[0]),float(Epoch[-1])
+    fwd_gd,bck_gd = var[0],var[-1]
+    fwd_gdf,bck_gdf = flag[0],flag[-1]
+    fwsp_qc,bksp_qc = [0]*len(Epoch),[0]*len(Epoch)
+
+    for i in range(1,len(Epoch)):
+        delta_Epoch = abs(float(Epoch[i]) - fwd_ep_gd)
+        deltacurrent= abs(float(var[i]) - float(fwd_gd))
+        if delta_Epoch== 3600*3 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>24.96:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>21.39:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue
+        elif delta_Epoch== 3600*2 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>19.35:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>16.59:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue
+        elif delta_Epoch== 3600*1 and flag[i]!= 4 and fwd_gdf!=4:
+            if deltacurrent>13.14:
+                fwsp_qc[i] = 4
+                flag[i] = 4
+            elif deltacurrent>11.26:
+                fwsp_qc[i] = 3
+                flag[i] = 3
+            else:
+                fwsp_qc[i] = 1
+                fwd_gd = var[i]
+                fwd_ep_gd = float(Epoch[i])
+                fwd_gdf=flag[i]
+                continue            
+        else:
+            fwd_gd = var[i]
+            fwd_ep_gd = float(Epoch[i])
+            fwd_gdf=flag[i]   
+            continue
+
+    for i in range(-2,-len(Epoch),-1):
+        delta_Epoch = abs(float(Epoch[i]) - int(bck_ep_gd))
+        deltacurrent= abs(float(var[i]) - float(bck_gd))
+        if delta_Epoch == 3600*3 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>24.96:
+                bksp_qc[i] = 4
+            elif deltacurrent>21.39:
+                bksp_qc[i] = 3
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        elif delta_Epoch == 3600*2 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>19.35:
+                bksp_qc[i] = 4
+            elif deltacurrent>16.59:
+                bksp_qc[i] = 3
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        elif delta_Epoch == 3600*1 and flag[i] != 4 and bck_gdf!=4:
+            if deltacurrent>13.14:
+                bksp_qc[i] = 4
+            elif deltacurrent>11.26:
+                bksp_qc[i] = 3                     
+            else:
+                bksp_qc[i] = 1
+                bck_gd = var[i]
+                bck_ep_gd = float(Epoch[i])
+                bck_gdf=flag[i]
+        else:
+            bck_gd = var[i]
+            bck_ep_gd = float(Epoch[i])
+            bck_gdf=flag[i]
+    
+    #TODO: Might consider a toggle since you want to be able to run this in realtime. 
+    #OK
+    for i in range(0, len(Epoch)):
+        if fwsp_qc[i] == 4 or bksp_qc[i] == 4:
+            flag[i] = 4
+            idf[i]='10'
+        elif fwsp_qc[i] == 3 or bksp_qc[i] == 3:
+            flag[i] = 3             
+            idf[i]='61'                 
+        else:
+            continue
     
     
     return flag,idf
