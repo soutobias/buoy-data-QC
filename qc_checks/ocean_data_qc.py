@@ -10,22 +10,22 @@ NDBC website in form of time, Wdir, Wspd, Gst, Wvht, Dpd, Apd, Mwd, Pres, Atmp,
 Wtmp, Dewp, Vis and Tide, and perform QC checks based on NDBC's "Handbook of
 Automated Data Quality Control Checks and Procedures". Each check generates a QC
 table for the archive used, following the QC Numbering.
-5 indicates that the time listed is not valid and is in the future.  
+5 indicates that the time listed is not valid and is in the future.
 
 Required Input: EPOCH Time, Wvht(m), Dpd(s), Apd(s), Mwd(degrees)
 
-Checks Performed: 
-    Valid Time    
+Checks Performed:
+    Valid Time
     Range Limits
     Climatological Range Limits
     Standard Time Continuity
     Stuck Sensor
-    Wave Height Verses Average Wave Period    
+    Wave Height Verses Average Wave Period
 
 Flag Convention as follows:
  0 = no QC performed
  1 = good data
- 2 = prob. good 
+ 2 = prob. good
  3 = prob. bad
  4 = bad data
  5 = invalid time
@@ -35,82 +35,21 @@ Flag Convention as follows:
 
 Author: Tobias Ferreira
 Organization: Brazilian Navy, BR
-Date: May 03th 2014  
-Version: 1.1 
-    
+Date: August 19th 2020
+Version: 1.0
+
 """
-
-#TODO: Put your name and date on here. 
-#OK
-
-#TODO: How are you handling missing or none values? Is that handled in the data read section? Might cause problems.
-# I created a check that flags the missing values (MISVALUECHECK)
 
 import numpy as np
 import time
 import math
-
-def valoresargos():
-
-    rWvht=[0.1,19.9]
-    rWmax=[0.1,19.9]
-    rDpd=[1.7,30]
-    rMwd=[0,360]
-    rWspd=[0.1,59]
-    rWdir=[0,360]
-    rGust=[0.1,59]
-    rAtmp=[-39,59]
-    rPres=[501,1099]
-    rDewp=[-29,39]
-    rWtmp=[-3,39]
-    rHumi=[25,102]
-    rCvel=[-4990,4990]
-    rCdir=[0,360]
-    rApd=[1.7,30]
-    
-    sigmaWvht=6
-    sigmaHumi=20
-    sigmaPres=21
-    sigmaAtmp=11
-    sigmaWspd=25
-    sigmaWtmp=8.6
-    
-    misHumi1=11
-    misHumi2=12
-    misCvel=409.5
-    misCvel1=4095
-    misCdir=511
-    misDewp=-10
-    misAtmp=-10
-    misWtmp=40.95
-
-    return rWvht,rDpd,rMwd,rWspd,rWdir,rGust,rAtmp,rPres,rDewp,rWtmp,rApd,rHumi,rCvel,rCdir, sigmaWvht,sigmaPres,sigmaAtmp,sigmaWspd,sigmaWtmp,sigmaHumi,misHumi1,misHumi2,misCvel,misCvel1,misCdir,misDewp,misAtmp,misWtmp,rWmax
-
-
-def valoresclima():
-    
-    r1Wvht=[0,15]
-    r1Wmax=[0,19]
-    r1Dpd=[1.7,20]
-    r1Wspd=[0,59]
-    r1Gust=[0,59]
-    r1Atmp=[-8,42]
-    r2Atmp=[8,48]
-    r3Atmp=[15,48]
-    r1Pres=[950,1050]
-    r1Dewp=[-29,39]
-    r1Wtmp=[-3,39]
-    r1Apd=[1.7,20]
-    r1Cvel=[-2500,2500]
-    
-    return r1Wvht,r1Dpd,r1Wspd,r1Gust,r1Atmp,r1Pres,r1Dewp,r1Wtmp,r1Apd, r1Cvel, r1Wmax, r2Atmp, r3Atmp
 
 
 ############################ Begin QC ################################
 
 
 ###############################################################################
-# Valid Time Check 
+# Valid Time Check
 # Check to see if time is in the future.
 #
 # Required input:
@@ -123,12 +62,12 @@ def valoresclima():
 
 def timecheck(Epoch):
 
-    T_now = time.time() 
-    timeflag=[0]*len(Epoch) 
-    for i in range(len(Epoch)): 
+    T_now = time.time()
+    timeflag=[0]*len(Epoch)
+    for i in range(len(Epoch)):
 
-#TODO: should add a safety factor to the future time check in case there is a small drift in time of a couple of minutes; 
-      
+#TODO: should add a safety factor to the future time check in case there is a small drift in time of a couple of minutes;
+
         if Epoch[i] > T_now+600: #Add 10 minutes to the Time_now to avoid incorrect flag
            timeflag[i]=4
         else:
@@ -141,7 +80,7 @@ def timecheck(Epoch):
 
 
 ###############################################################################
-# Verificacao da situacao do sensor no banco de dados 
+# Verificacao da situacao do sensor no banco de dados
 # Flag the missing (MISVALUE) or None values
 #
 # Required input:
@@ -165,11 +104,11 @@ def sensorruimcheck(Epoch,var,flag,sitsensor,idf):
         else:
             continue
 
-    return flag,idf    
+    return flag,idf
 
 def ver_sensorcheck(Epoch,var,flag,disptipo,idf,dadosboia,hierar):
 
-   
+
     dadossensor=[]
     flag=flag
     idf=idf
@@ -195,7 +134,7 @@ def ver_sensorcheck(Epoch,var,flag,disptipo,idf,dadosboia,hierar):
 
 
 ###############################################################################
-# Missing value check 
+# Missing value check
 # Flag the missing (MISVALUE) or None values
 #
 # Required input:
@@ -211,7 +150,7 @@ def ver_sensorcheck(Epoch,var,flag,disptipo,idf,dadosboia,hierar):
 ###############################################################################
 
 def misvaluecheck(Epoch,var,flag,misvalue,idf):
-    
+
     for i in range(len(Epoch)):
         if var[i]==misvalue or var[i]==None or var[i]==99.99 or var[i]=='None'  or var[i]==-9999   or var[i]==-99999 or var[i]=='-9999'   or var[i]=='-99999':
             flag[i]=4
@@ -226,7 +165,7 @@ def misvaluecheck(Epoch,var,flag,misvalue,idf):
 
 
 ###############################################################################
-# Range check 
+# Range check
 # Check to ensure values are within global and equipment ranges (LIMITS)
 #
 # Required input:
@@ -243,13 +182,13 @@ def misvaluecheck(Epoch,var,flag,misvalue,idf):
 
 def rangecheck(Epoch,var,limits,flag,idf):
 
- 
-    for i in range(len(Epoch)): 
+
+    for i in range(len(Epoch)):
         if flag[i]!=4:
             if var[i] > limits[1] or var[i] < limits[0]:
                flag[i] = 4
                idf[i]='2'
-           
+
             else:
                 continue
 
@@ -259,7 +198,7 @@ def rangecheck(Epoch,var,limits,flag,idf):
     #end Range Check section
 
 ###############################################################################
-# Range check Climatologico 
+# Range check Climatologico
 # Check to ensure values are within brazil ranges (LIMITS)
 #
 # Required input:
@@ -276,13 +215,13 @@ def rangecheck(Epoch,var,limits,flag,idf):
 
 def rangecheckclima(Epoch,var,limits,flag,idf):
 
- 
-    for i in range(len(Epoch)): 
+
+    for i in range(len(Epoch)):
         if flag[i]!=4:
             if var[i] > limits[1] or var[i] < limits[0]:
                flag[i] = 4
                idf[i]='9'
-           
+
             else:
                 continue
 
@@ -293,7 +232,7 @@ def rangecheckclima(Epoch,var,limits,flag,idf):
 
 
 ###############################################################################
-# Wind speed x Gust Check 
+# Wind speed x Gust Check
 # Compares if the values of wind speed is higher than Gust. Also verify if
 # Gust is less of 0.5
 #
@@ -374,7 +313,7 @@ def wvhtwmaxcheck(Epoch,wvht,wmax,flagv,flagm,idfv,idfm):
 
 
 ###############################################################################
-# Dew point x Air temperature Check 
+# Dew point x Air temperature Check
 # Compares if the Dewpoint values is higher than Air temperature values.
 # If so, dewp value will be changed to atmp value and data will be soft flagged
 #
@@ -394,8 +333,8 @@ def wvhtwmaxcheck(Epoch,wvht,wmax,flagv,flagm,idfv,idfm):
 
 def dewpatmpcheck(Epoch,dewp,atmp,flagd,flaga,idf):
 
-  
-    for i in range(len(Epoch)):            
+
+    for i in range(len(Epoch)):
         if dewp[i]>atmp[i] and flagd[i]!=4 and flaga[i]!=4:
             dewp[i]=atmp[i]
             flagd[i]=3
@@ -409,7 +348,7 @@ def dewpatmpcheck(Epoch,dewp,atmp,flagd,flaga,idf):
     #end dewpoint atmp check section
 
 ###############################################################################
-# Battery x Air Pressure Check 
+# Battery x Air Pressure Check
 # Pressure will be flagged if batterty is below of 10.5 V.
 #
 # Required input:
@@ -427,20 +366,20 @@ def dewpatmpcheck(Epoch,dewp,atmp,flagd,flaga,idf):
 
 def batsensorcheck(Epoch,battery,pres,flagp,idf):
 
-     
+
     for i in range(len(Epoch)):
         if battery[i]<=10.5 and battery[i]!=None and battery[i]!=-9999 and battery[i]!=-99999:
             flagp[i]=4
             idf[i]='5'
         else:
             continue
-            
+
     return flagp,idf
 
     #####################
     #end battery pressure check section
 
-#######################################################################################    
+#######################################################################################
 # Stuck Sensor Check
 # Compare the values to the NEV next values.
 # If the value do not change, it will be flagged
@@ -475,29 +414,29 @@ def stucksensorcheck (Epoch,var,flag,nev,idf):
                 c=c+1
             else:
                 var1[c]=var[i]
-                c=c+1                
+                c=c+1
                 continue
-         
-    
+
+
     for i in range(nev-1,len(Epoch)):
         if flag[i]!=4:
             if (np.array(var1[i]) == np.array(var1[i-nev+1:i])).all():
-                for ii in range(nev):               
+                for ii in range(nev):
                     flag[i-nev+ii+1]=4
                     idf[i-nev+ii+1]='6'
-    
-                       
-                    
-                    
-                
-                
+
+
+
+
+
+
     return flag,idf
 
     #####################
     #end stuck sensor check
 
 
-#######################################################################################    
+#######################################################################################
 # Related Measurement Check
 # Compares the values of the two anemometers to find the best one.
 #
@@ -512,11 +451,11 @@ def stucksensorcheck (Epoch,var,flag,nev,idf):
 # - Gust2: gust speed for anemometer 2
 # - zwind2: Height of the anemometer 2
 # - Wspd1flag: matrix of flag for wind speed from anemometer 1
-# - Wdir1flag: matrix of flag for wind direction from anemometer 1 
-# - Gust1flag: matrix of flag for gust speed from anemometer 1 
-# - Wspd2flag: matrix of flag for wind speed from anemometer 2 
-# - Wdir2flag: matrix of flag for wind direction from anemometer 2 
-# - Gust2flag: matrix of flag for gust speed from anemometer 2 
+# - Wdir1flag: matrix of flag for wind direction from anemometer 1
+# - Gust1flag: matrix of flag for gust speed from anemometer 1
+# - Wspd2flag: matrix of flag for wind speed from anemometer 2
+# - Wdir2flag: matrix of flag for wind direction from anemometer 2
+# - Gust2flag: matrix of flag for gust speed from anemometer 2
 # - Wdir1flagid: flag id for Wdir1. '52' --> letter that represents the flag
 # - Wspd1flagid: flag id for Wspd1. '52' --> letter that represents the flag
 # - Gust1flagid: flag id for Gust1. '52' --> letter that represents the flag
@@ -542,22 +481,22 @@ def relatedmeascheck4(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
     if zwind1==[]:
         zwind1=4.7
     if zwind2==[]:
-        zwind2=3.4    
+        zwind2=3.4
 
 #    if boi=='cabofrio':
 #        zwind1=3
-    
+
     # Creating the variables for the best anemometer
     Wdir= [0]*len(Epoch)
     Wspd= [0]*len(Epoch)
     Gust= [0]*len(Epoch)
 
     # Creating the flags for the best anemometer
-    Wspdflag= [0]*len(Epoch)   
-    Gustflag= [0]*len(Epoch)   
+    Wspdflag= [0]*len(Epoch)
+    Gustflag= [0]*len(Epoch)
     Wdirflag= [0]*len(Epoch)
-    Wspdflagid= [0]*len(Epoch)   
-    Gustflagid= [0]*len(Epoch)   
+    Wspdflagid= [0]*len(Epoch)
+    Gustflagid= [0]*len(Epoch)
     Wdirflagid= [0]*len(Epoch)
 
 
@@ -710,7 +649,7 @@ def relatedmeascheck4(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
                             Gustflagid[i]=Gust1flagid[i]
                             continue
                         continue
-            elif tr!=1:                        
+            elif tr!=1:
                 if Wspd1flag[i]!=4:
                     Wspd[i]=Wspd1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
                     Gust[i]=Gust1[i]*((10/zwind1)**0.11)  #Check this for heights. should use 10/Zwspd1
@@ -752,7 +691,7 @@ def relatedmeascheck4(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
     #####################
     #end of related measurement check 2
 
-#######################################################################################    
+#######################################################################################
 # Wvht x Average Period check
 # Compare the wave significant height and Average period
 # If the value do not change, it will be flagged
@@ -771,25 +710,25 @@ def relatedmeascheck4(Epoch,Wdir1,Wspd1,Gust1,Wdir2,Wspd2,Gust2,Wspd1flag, Wdir1
 #
 ########################################################################################
 
-def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf): 
+def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
 
     htresh=[0]*len(Epoch)
-    for i in range(len(Epoch)): 
+    for i in range(len(Epoch)):
         if Apd[i] <= 5 and Apd[i]!=None:
            htresh[i] = (2.55 + (Apd[i]/4))
-            
+
         elif Apd[i] > 5:
            htresh[i] = ((1.16*Apd[i])-2)
-        
-        else:
-           continue    
 
-    for i in range(len(Epoch)): 
+        else:
+           continue
+
+    for i in range(len(Epoch)):
         if flagt[i]!=4 and flagh[i]!=4:
             if Wvht[i] > htresh[i]:
                flagh[i] = 4
                idf[i]='7'
-          
+
             else:
                continue
 
@@ -827,44 +766,14 @@ def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
 
-    
+
     fwd_ep_gd,bck_ep_gd = float(Epoch[0]),float(Epoch[-1])
     fwd_gd,bck_gd = var[0],var[-1]
     fwd_gdf,bck_gdf = flag[0],flag[-1]
     fwsp_qc,bksp_qc = [0]*len(Epoch),[0]*len(Epoch)
-        
+
 
 
 #TODO: for loop should be 0,len(epoch) as that is the first value in the array.
@@ -889,13 +798,13 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
                 else:
                     fwd_gd = var[i]
                     fwd_ep_gd = float(Epoch[i])
-                    fwd_gdf=flag[i]                    
+                    fwd_gdf=flag[i]
             else:
                 continue
-        else: 
+        else:
             fwd_gd = var[i]
             fwd_ep_gd = float(Epoch[i])
-            fwd_gdf=flag[i]   
+            fwd_gdf=flag[i]
             continue
 
 
@@ -904,11 +813,11 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
 
     if rt==1:
         for i in range(-2,-len(Epoch),-1):
-              
+
             delta_Epoch = abs(float(Epoch[i]) - int(bck_ep_gd))
             if delta_Epoch <= 3600*3:
                 if flag[i] != 4:
-                    if bck_gdf!=4:                    
+                    if bck_gdf!=4:
                         sigmat=float(0.58*sigma*(np.sqrt(delta_Epoch/3600)))
                         if abs(var[i] - bck_gd) > sigmat:
                             bksp_qc[i] = 4
@@ -924,34 +833,34 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
                         bck_gdf=flag[i]
                 else:
                     continue
-            
-            else: 
+
+            else:
                 bck_gd = var[i]
                 bck_ep_gd = float(Epoch[i])
                 bck_gdf=flag[i]
-                
+
                 continue
-    
-    #TODO: Might consider a toggle since you want to be able to run this in realtime. 
+
+    #TODO: Might consider a toggle since you want to be able to run this in realtime.
     #OK
         for i in range(0, len(Epoch)):
             if fwsp_qc[i] == 4 and bksp_qc[i] == 4:
                 flag[i] = 4
-                idf[i]='8'              
+                idf[i]='8'
             elif fwsp_qc[i] == 4 and bksp_qc[i] == 1:
                 fwsp_qc[i] = 3
-                flag[i] = 3             
-                idf[i]='8'                 
+                flag[i] = 3
+                idf[i]='8'
             elif fwsp_qc[i] == 1 and bksp_qc[i] == 4:
                 bksp_qc[i] = 3
-                flag[i] = 3            
-                idf[i]='8'                 
+                flag[i] = 3
+                idf[i]='8'
             elif fwsp_qc[i] == 0 and bksp_qc[i] == 4:
                 flag[i] = 4
-                idf[i]='8'                  
+                idf[i]='8'
             elif fwsp_qc[i] == 4 and bksp_qc[i] == 0:
                 flag[i] = 4
-                idf[i]='8'                 
+                idf[i]='8'
             else:
                 continue
     else:
@@ -962,8 +871,8 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
             else:
                 continue
 
-    
-    
+
+
     return flag,idf
 
 ########################################################################################
@@ -985,8 +894,8 @@ def tcontinuitycheck(Epoch,var,flag,sigma,idf,rt):
 
 
 def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
-    
-    
+
+
     fwd_ep_gd,bck_ep_gd = float(Epoch[0]),float(Epoch[-1])
     fwd_gd,bck_gd = var[0],var[-1]
     fwd_gdf,bck_gdf = flag[0],flag[-1]
@@ -1033,11 +942,11 @@ def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
                 fwd_gd = var[i]
                 fwd_ep_gd = float(Epoch[i])
                 fwd_gdf=flag[i]
-                continue            
+                continue
         else:
             fwd_gd = var[i]
             fwd_ep_gd = float(Epoch[i])
-            fwd_gdf=flag[i]   
+            fwd_gdf=flag[i]
             continue
 
     for i in range(-2,-len(Epoch),-1):
@@ -1067,7 +976,7 @@ def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
             if deltacurrent>131.4:
                 bksp_qc[i] = 4
             elif deltacurrent>112.6:
-                bksp_qc[i] = 3                     
+                bksp_qc[i] = 3
             else:
                 bksp_qc[i] = 1
                 bck_gd = var[i]
@@ -1077,8 +986,8 @@ def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
             bck_gd = var[i]
             bck_ep_gd = float(Epoch[i])
             bck_gdf=flag[i]
-    
-    #TODO: Might consider a toggle since you want to be able to run this in realtime. 
+
+    #TODO: Might consider a toggle since you want to be able to run this in realtime.
     #OK
     for i in range(0, len(Epoch)):
         if fwsp_qc[i] == 4 or bksp_qc[i] == 4:
@@ -1088,15 +997,15 @@ def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
             idf_dir[i]='10'
 
         elif fwsp_qc[i] == 3 or bksp_qc[i] == 3:
-            flag[i] = 3             
-            idf[i]='61'                 
+            flag[i] = 3
+            idf[i]='61'
             flag_dir[i]=3
             idf_dir[i]='61'
 
         else:
             continue
-    
-    
+
+
     return flag,idf, flag_dir, idf_dir
 
 
@@ -1122,7 +1031,7 @@ def tcontinuityadcpcheck(Epoch,var,flag,idf,flag_dir,idf_dir):
 
 def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
 
-    
+
     fwd_ep_gd,bck_ep_gd = float(Epoch[0]),float(Epoch[-1])
     fwd_gd,bck_gd = var[0],var[-1]
     fwd_gdf,bck_gdf = flag[0],flag[-1]
@@ -1169,11 +1078,11 @@ def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
                 fwd_gd = var[i]
                 fwd_ep_gd = float(Epoch[i])
                 fwd_gdf=flag[i]
-                continue            
+                continue
         else:
             fwd_gd = var[i]
             fwd_ep_gd = float(Epoch[i])
-            fwd_gdf=flag[i]   
+            fwd_gdf=flag[i]
             continue
 
     for i in range(-2,-len(Epoch),-1):
@@ -1203,7 +1112,7 @@ def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
             if deltacurrent>13.14:
                 bksp_qc[i] = 4
             elif deltacurrent>11.26:
-                bksp_qc[i] = 3                     
+                bksp_qc[i] = 3
             else:
                 bksp_qc[i] = 1
                 bck_gd = var[i]
@@ -1213,20 +1122,20 @@ def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
             bck_gd = var[i]
             bck_ep_gd = float(Epoch[i])
             bck_gdf=flag[i]
-    
-    #TODO: Might consider a toggle since you want to be able to run this in realtime. 
+
+    #TODO: Might consider a toggle since you want to be able to run this in realtime.
     #OK
     for i in range(0, len(Epoch)):
         if fwsp_qc[i] == 4 or bksp_qc[i] == 4:
             flag[i] = 4
             idf[i]='10'
         elif fwsp_qc[i] == 3 or bksp_qc[i] == 3:
-            flag[i] = 3             
-            idf[i]='61'                 
+            flag[i] = 3
+            idf[i]='61'
         else:
             continue
-    
-    
+
+
     return flag,idf
 
 ########################################################################################
@@ -1253,7 +1162,7 @@ def currentgradientcheck(Epoch,var,flag,sigma,idf,rt):
 # Return: flaga,idfa
 
 
-#TODO: How are you defining windd, atmp, pres? Is is that wspd1 or 2 or good wspd. 
+#TODO: How are you defining windd, atmp, pres? Is is that wspd1 or 2 or good wspd.
 def frontexcepcheck1(Epoch,windd,flagw,flaga,idfa):
 
     last_gt= Epoch[0]
@@ -1285,7 +1194,7 @@ def frontexcepcheck1(Epoch,windd,flagw,flaga,idfa):
                 last_gt= Epoch[i]
                 last_gw = windd[i]
                 last_fa= flaga[i]
-                last_fw=flagw[i]            
+                last_fw=flagw[i]
         else:
             last_gt= Epoch[i]
             last_gw = windd[i]
@@ -1312,7 +1221,7 @@ def frontexcepcheck1(Epoch,windd,flagw,flaga,idfa):
 #def frontexcepcheck2(Epoch,windd,flagw,flaga,idfw):
 #
 #
-#    
+#
 #    last_gt= Epoch[0]
 #    last_gw = windd[0]
 #    last_fa= flaga[0]
@@ -1342,14 +1251,14 @@ def frontexcepcheck1(Epoch,windd,flagw,flaga,idfa):
 #                last_gt= Epoch[i]
 #                last_gw = windd[i]
 #                last_fa= flaga[i]
-#                last_fw=flagw[i]            
+#                last_fw=flagw[i]
 #        else:
 #            last_gt= Epoch[i]
 #            last_gw = windd[i]
 #            last_fa= flaga[i]
 #            last_fw=flagw[i]
 #            continue
-#        
+#
 #        return flagw, idfw
 
     #end of Frontal excepion 2
@@ -1379,7 +1288,7 @@ def frontexcepcheck3(Epoch,winds,atmp,flags,flaga,idfa):
             if last_fa!=4:
                 if flaga[i]==4:
                     if idfa[i]=='8':
-                        if winds[i]>7 and flags[i]!=4 and abs(atmp[i] - last_fa)>6: 
+                        if winds[i]>7 and flags[i]!=4 and abs(atmp[i] - last_fa)>6:
                             flaga[i] = 2
                             idfa[i]='55'
                             last_gt= Epoch[i]
@@ -1394,11 +1303,11 @@ def frontexcepcheck3(Epoch,winds,atmp,flags,flaga,idfa):
                     continue
             else:
                 last_gt= Epoch[i]
-                last_fa= flaga[i]                      
+                last_fa= flaga[i]
                 continue
         else:
             last_gt= Epoch[i]
-            last_fa= flaga[i]                      
+            last_fa= flaga[i]
             continue
 
     return flaga,idfa
@@ -1420,7 +1329,7 @@ def frontexcepcheck3(Epoch,winds,atmp,flags,flaga,idfa):
 
 def frontexcepcheck4(Epoch,pres,flagp,flagw,idfw):
 
-    for i in range(0, len(Epoch)):   
+    for i in range(0, len(Epoch)):
         if pres[i]<995 and flagp[i]!=4 and idfw[i]=='8':
             flagw[i] = 2
             idfw[i]='56'
@@ -1448,7 +1357,7 @@ def frontexcepcheck5(Epoch,pres,flagp,idfp):
     last_gt= Epoch[0]
     last_fp= flagp[0]
     last_gp = pres[0]
-    
+
     for i in range(1,len(Epoch)):
         delta_Epoch = abs(Epoch[i] - last_gt)
         if delta_Epoch <= 3600*3:
@@ -1501,7 +1410,7 @@ def frontexcepcheck5(Epoch,pres,flagp,idfp):
 
 def frontexcepcheck6(Epoch,winds,flags,idfwh,flagwh):
 
-    for i in range(0, len(Epoch)):   
+    for i in range(0, len(Epoch)):
         if winds[i]>=15 and flags[i]!=4 and idfwh[i]=='8':
             flagwh[i] = 2
             idfwh[i]='58'
@@ -1531,7 +1440,7 @@ def frontexcepcheck6(Epoch,winds,flags,idfwh,flagwh):
 
 
 def ncepmodelcheck(Epoch,Pres,Atmp,Wdir,Wspd,Presflag,Atmpflag,Wdirflag,Wspdflag):
-    
+
 
     lines = open('C:\\ndbc\\data\\NCPE_data.txt', 'rb')
 
@@ -1547,7 +1456,7 @@ def ncepmodelcheck(Epoch,Pres,Atmp,Wdir,Wspd,Presflag,Atmpflag,Wdirflag,Wspdflag
     for line in lines:
         dataline = line.strip()
         columns = dataline.split()
-        
+
         Year.append(int(columns[0]))
         Month.append(int(columns[1]))
         Day.append(int(columns[2]))
@@ -1562,7 +1471,7 @@ def ncepmodelcheck(Epoch,Pres,Atmp,Wdir,Wspd,Presflag,Atmpflag,Wdirflag,Wspdflag
             if abs(ModelPres[i]-Pres[i])>2.5:
                 Presflag[i] = 3
             elif abs(ModelAtmp[i]-Atmp[i])>3:
-                Atmpflag[i] = 3                
+                Atmpflag[i] = 3
             elif Wspd[i]>10 and abs(Wdir[i]-Wdir[i-1])>30:
                 Wdirflag[i]=3
             elif Wspd[i]>=5 and Wspd<=10:
@@ -1574,19 +1483,19 @@ def ncepmodelcheck(Epoch,Pres,Atmp,Wdir,Wspd,Presflag,Atmpflag,Wdirflag,Wspdflag
                 Wspdflag[i]=3
             else:
                 continue
-              
+
     return Presflag,Atmpflag,Wdirflag,Wspdflag
 ########################################################
 #end Wave Height Verses Average Wave Period check
 
-#######################################################################################    
+#######################################################################################
 # Climatological Range Check
 # Check to ensure values are within climatological ranges.
 #
 # Required checks: Range
 #
 ########################################################################################
-def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag, Dpdflag, Apdflag,Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag): 
+def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag, Dpdflag, Apdflag,Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag):
 
 # Definition of the ranges. For example: msdWvht=[0,5]. It means that the
 # climatological mean is 0 and the standard deviation is 20
@@ -1600,87 +1509,87 @@ def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag
     msdPres=[500,1100]
     msdDewp=[-30,40]
     msdWtmp=[-4,30]
-    
-    for i in range(len(Epoch)): 
-    
+
+    for i in range(len(Epoch)):
+
         if Wvht[i] > (msdWvht[0]+(3*msdWvht[1])) or Wvht[i] < (msdWvht[0]-(3*msdWvht[1])):
            Wvhtflag[i] = 4
-       
+
         else:
            Wvhtflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Dpd[i] >= (msdDpd[0]+(3*msdDpd[1])) or Dpd[i] <= (msdDpd[0]+(3*msdDpd[1])):
            Dpdflag[i] = 4
-       
+
         else:
            Dpdflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Apd[i] >= (msdApd[0]+(3*msdApd[1])) or Apd[i] <= (msdApd[0]+(3*msdApd[1])):
            Apdflag[i] = 4
-       
+
         else:
            Apdflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Wspd[i] > (msdWspd[0]+(3*msdWspd[1])) or Wspd[i] < (msdWspd[0]+(3*msdWspd[1])):
            Wspdflag[i] = 4
-       
+
         else:
            Wspdflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Gust[i] > (msdGust[0]+(3*msdGust[1])) or Gust[i] < (msdGust[0]+(3*msdGust[1])):
            Gustflag[i] = 4
-       
+
         else:
            Gustflag[i] = 1
-           
-    for i in range(len(Epoch)): 
-    
+
+    for i in range(len(Epoch)):
+
         if Atmp[i] > (msdAtmp[0]+(3*msdAtmp[1])) or Atmp[i] < (msdAtmp[0]+(3*msdAtmp[1])):
            Atmpflag[i] = 4
-       
+
         else:
            Atmpflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Pres[i] > (msdPres[0]+(3*msdPres[1])) or Pres[i] < (msdPres[0]+(3*msdPres[1])):
            Presflag[i] = 4
-       
+
         else:
            Presflag[i] = 1
 
-    for i in range(len(Epoch)): 
-    
+    for i in range(len(Epoch)):
+
         if Dewp[i] > (msdDewp[0]+(3*msdDewp[1])) or Dewp[i] < (msdDewp[0]+(3*msdDewp[1])):
            Dewpflag[i] = 4
-       
+
         else:
            Dewpflag[i] = 1
- 
-    for i in range(len(Epoch)): 
-    
+
+    for i in range(len(Epoch)):
+
         if Wtmp[i] > (msdWtmp[0]+(3*msdWtmp[1])) or Wtmp[i] < (msdWtmp[0]+(3*msdWtmp[1])):
            Wtmpflag[i] = 4
-       
+
         else:
            Wtmpflag[i] = 1
-              
 
-    return Wvhtflag, Dpdflag, Apdflag, Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag 
+
+    return Wvhtflag, Dpdflag, Apdflag, Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag
     #end Range Check section
 
 #####################################################
- 
- 
-def gustratiocheck(gustfactor,winds,gust,flaggf): 
+
+
+def gustratiocheck(gustfactor,winds,gust,flaggf):
 
 
      for i in range(len(gust)):
@@ -1697,17 +1606,17 @@ def gustratiocheck(gustfactor,winds,gust,flaggf):
              ratiomax=ratiomax+0.35
          else:
              ratiomax=ratiomax+0.2
-             continue             
-             
+             continue
+
          if gustfactor[i]>ratiomax:
              flaggf[i]=4
          elif gustfactor[i]<=0.9:
              flaggf[i]=4
          else:
              continue
-          
-     return flaggf         
- 
+
+     return flaggf
+
 
 
 
@@ -1716,26 +1625,26 @@ def gustratiocheck(gustfactor,winds,gust,flaggf):
 # Check to determine if the direction of the swell is coming from shore
 #
 # Required checks: None
-# 
+#
 #########################################################################################
 
 def dircoastcheck(Epoch, Mwd, coastflag):
-    
 
-    meancoast = 150 #direction of the coast    
-        
-    for i in range(len(Epoch)): 
-        
+
+    meancoast = 150 #direction of the coast
+
+    for i in range(len(Epoch)):
+
         if Mwd[i] < (meancoast-45) and Mwd[i] > (meancoast+45-180):
            coastflag[i] = 4
-         
-                      
-        else:          
+
+
+        else:
            coastflag[i] = 1
-          
+
     return coastflag, meancoast
-       
-#end Swell direction check 
+
+#end Swell direction check
 
 ########################################################
 
@@ -1750,7 +1659,6 @@ def dircoastcheck(Epoch, Mwd, coastflag):
 #########################################################################################
 
 
- 
 
- 
- 
+
+

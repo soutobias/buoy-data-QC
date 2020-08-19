@@ -23,7 +23,7 @@ from os.path import expanduser
 home = expanduser("~")
 sys.path.insert(0,home)
 import user_config
-os.chdir( user_config.path )
+os.chdir( user_config.path2 )
 
 def get_data_db(buoy):
 
@@ -34,7 +34,7 @@ def get_data_db(buoy):
                                                 user_config.database))
 
 
-    sql = "SELECT * FROm pnboia_bruto wheRe estacao_id=%s ORdeR by data" %buoy["nome"]
+    sql = "SELECT * FROm pnboia_bruto wheRe estacao_id=%s ORdeR by data" % buoy
     return pd.read_sql(sql, con)
 
 def insert_data_db(df):
@@ -68,32 +68,15 @@ def working_buoys():
 
 buoys=working_buoys()
 
-
-variables10=['data','Lon','Lat','Battery','Wspd1','Gust1','Wdir1','Wspd2','Gust2','Wdir2','Atmp','Humi','Dewp','Pres','Wtmp','bHead','Arad','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3','Wvht','Wmax','Dpd','Mwd','Spred']
-
-variables1=['data','Wdir1','Wspd1','Gust1','Wdir2','Wspd2','Gust2','Wvht','Wmax','Dpd','Mwd','Pres','Humi','Atmp','Wtmp','Dewp','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3','Battery']
-
-#lista de variáveis para os testes de flag
-variables1a=['data','Minute','Wdir','Wspd','Gust','Wvht','Wmax','Dpd','Mwd','Pres','Humi','Atmp','Wtmp','Dewp','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3']
-
-#lista de variáveis para a criação dos flag e flagid
-variables2=['Wdir1','Wspd1','Gust1','Wdir2','Wspd2','Gust2','Wvht','Wmax','Dpd','Mwd','Pres','Humi','Atmp','Wtmp','Dewp','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3']
-
-#lista de variáveis após passar pelos testes (somente com um anemometro agora)
-variables3=['Wdir','Wspd','Gust','Wvht','Wmax','Dpd','Mwd','Pres','Humi','Atmp','Wtmp','Dewp','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3']
-
-#lista de variáveis para o arquivo final a ser gerado
-variables0=['Epoca','buoy','Lat','Lon','data','Battery','Wspd','Wdir','Gust','Atmp','Dewp','Humi','Pres','bHead','Arad','Wtmp','Cvel1','Cdir1','Cvel2','Cdir2','Cvel3','Cdir3','Wvht','Wmax','Dpd','Mwd','Spred']
-
 buoy = buoys[0]
 # for buoy in buoys:
 print(buoy["nome"])
 
-raw_data=get_data_db(buoy["estacao_id"])
+raw_data = get_data_db(buoy["estacao_id"])
 
-stop
+raw_data = raw_data.replace([-9999, 9999, 99.99, None, "-9999", "-99999", '', '99.99', '-9999.0', -9999.0, -9999] , np.NaN)
 
-df=df.replace([-9999, 9999, 99.99, None, NONE, "-9999", "-99999", '', '99.99', '-9999.0', -9999.0, -9999] , np.NaN)
+raw_data = raw_data.set_index("data")
 
 # for ii in range(len(variables0)):
 #     exec("%stratados=[]"% (variables0[ii]))
@@ -105,6 +88,7 @@ df=df.replace([-9999, 9999, 99.99, None, NONE, "-9999", "-99999", '', '99.99', '
 #     exec("%sflagtratados1=[]"% (variables3[ii]))
 #     exec("%sflagidtratados1=[]"% (variables3[ii]))
 
+stop
 (flag_data)=qualitycontrol(raw_data,buoy)
 
 
