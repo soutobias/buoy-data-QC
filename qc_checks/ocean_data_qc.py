@@ -47,92 +47,6 @@ import math
 
 ############################ Begin QC ################################
 
-
-###############################################################################
-# Valid Time Check
-# Check to see if time is in the future.
-#
-# Required input:
-# - Epoch: Data/Time in Epoch date
-#
-# Required checks: None
-#
-# Return: timeflag
-###############################################################################
-
-def timecheck(Epoch):
-
-    T_now = time.time()
-    timeflag=[0]*len(Epoch)
-    for i in range(len(Epoch)):
-
-#TODO: should add a safety factor to the future time check in case there is a small drift in time of a couple of minutes;
-
-        if Epoch[i] > T_now+600: #Add 10 minutes to the Time_now to avoid incorrect flag
-           timeflag[i]=4
-        else:
-           continue
-
-    return timeflag
-
-    #####################
-    #end Time check section
-
-
-###############################################################################
-# Verificacao da situacao do sensor no banco de dados
-# Flag the missing (MISVALUE) or None values
-#
-# Required input:
-# - Epoch: Data/Time in Epoch date
-# - var: variable that will be checked
-# - misvalue: missing value for the var
-# - flag: matrix of flag for the variable
-# - idf= flag id. '53' --> letter that represents the flag
-#
-# Required checks: None
-#
-# Return: flag, idf
-###############################################################################
-
-def sensorruimcheck(Epoch,var,flag,sitsensor,idf):
-
-    for i in range(len(Epoch)):
-        if sitsensor==1:
-            flag[i]=4
-            idf[i]='1'
-        else:
-            continue
-
-    return flag,idf
-
-def ver_sensorcheck(Epoch,var,flag,disptipo,idf,dadosboia,hierar):
-
-
-    dadossensor=[]
-    flag=flag
-    idf=idf
-#    for i in range(len(dadosboia)):
-#        if hierar!=0:
-#            if dadosboia[i][1]==disptipo and dadosboias[i][4]==hierar:
-#                dadossensor.append(dadosboia[i][2])
-#        else:
-#            if dadosboia[i][1]==disptipo:
-#                dadossensor.append(dadosboia[i][2])
-#
-#    for i in range(len(Epoch)):
-#        if dadossensor!='operativo':
-#            flag[i]=4
-#            idf[i]='20'
-#        else:
-#            continue
-
-    return flag,idf
-
-    #####################
-    #end Misvalue check section
-
-
 ###############################################################################
 # Missing value check
 # Flag the missing (MISVALUE) or None values
@@ -149,16 +63,12 @@ def ver_sensorcheck(Epoch,var,flag,disptipo,idf,dadosboia,hierar):
 # Return: flag, idf
 ###############################################################################
 
-def misvaluecheck(Epoch,var,flag,misvalue,idf):
+def mis_value_check(var,limits,flag):
 
-    for i in range(len(Epoch)):
-        if var[i]==misvalue or var[i]==None or var[i]==99.99 or var[i]=='None'  or var[i]==-9999   or var[i]==-99999 or var[i]=='-9999'   or var[i]=='-99999':
-            flag[i]=4
-            idf[i]='1'
-        else:
-            continue
+    flag[var == limits] = 1
+    flag[var == np.NaN] = 1
 
-    return flag,idf
+    return flag
 
     #####################
     #end Misvalue check section
@@ -180,19 +90,12 @@ def misvaluecheck(Epoch,var,flag,misvalue,idf):
 # Return: flag, idf
 ###############################################################################
 
-def rangecheck(Epoch,var,limits,flag,idf):
+def range_check(var,limits,flag):
 
+    flag[var < limits[0]] = 2 if flag  == 0
+    flag[var > limits[1]] = 2 if flag  == 0
 
-    for i in range(len(Epoch)):
-        if flag[i]!=4:
-            if var[i] > limits[1] or var[i] < limits[0]:
-               flag[i] = 4
-               idf[i]='2'
-
-            else:
-                continue
-
-    return flag,idf
+    return flag
 
     #####################
     #end Range Check section
@@ -213,19 +116,13 @@ def rangecheck(Epoch,var,limits,flag,idf):
 # Return: flag, idf
 ###############################################################################
 
-def rangecheckclima(Epoch,var,limits,flag,idf):
+def range_check_clima(var,limits,flag):
 
+    flag[var < limits[0]] = 9 if flag  == 0
+    flag[var > limits[1]] = 9 if flag  == 0
 
-    for i in range(len(Epoch)):
-        if flag[i]!=4:
-            if var[i] > limits[1] or var[i] < limits[0]:
-               flag[i] = 4
-               idf[i]='9'
+    return flag
 
-            else:
-                continue
-
-    return flag,idf
 
     #####################
     #end Range Check section
