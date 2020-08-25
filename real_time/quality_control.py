@@ -7,10 +7,24 @@ Created on Thu Jun 05 14:47:23 2014
 
 import numpy as np
 from numpy import *
-import argosqc as qc
+import '../qc_checks/ocean_data_qc.py' as qc
+
+
 
 def arredondar(num):
     return float( '%.0f' % ( num ) )
+
+
+def definition_flag_pandas()
+
+    flag_data = raw_data [['wspd1', 'gust1', 'wdir1', 'wspd2', 'gust2',
+       'wdir2', 'atmp', 'humi', 'dewp', 'pres', 'wtmp', 'bhead', 'arad',
+       'cvel1', 'cdir1', 'cvel2', 'cdir2', 'cvel3', 'cdir3', 'wvht', 'wmax',
+       'dpd', 'mwd', 'spred']] * 0
+
+    flag_data = flag_data.replace(np.NaN, 0).astype(int)
+
+    return flag_data
 
 def qualitycontrol(raw_data, buoy):
 
@@ -19,16 +33,12 @@ def qualitycontrol(raw_data, buoy):
     mis_value_limits = qc.mis_value_limits()
     climate_limits = qc.climate_limits()
 
+    flag_data = definition_flag_pandas()
+
     ##############################################
     #RUN THE QC CHECKS
     ##############################################
 
-    flag_data = raw_data [['wspd1', 'gust1', 'wdir1', 'wspd2', 'gust2',
-       'wdir2', 'atmp', 'humi', 'dewp', 'pres', 'wtmp', 'bhead', 'arad',
-       'cvel1', 'cdir1', 'cvel2', 'cdir2', 'cvel3', 'cdir3', 'wvht', 'wmax',
-       'dpd', 'mwd', 'spred']] * 0
-
-    flag_data = flag_data.replace(np.NaN, 0).astype(int)
 
     #Missing value check
     parameters = ['wdir1', 'wspd1', 'gust1', 'wdir2', 'wspd2', 'gust2', 'wvht', 'wmax', 'dpd', 'mwd', 'pres', 'humi', 'atmp', 'wtmp', 'dewp', 'cvel1', 'cdir1', 'cvel2', 'cdir2', 'cvel3', 'cdir3']
@@ -42,115 +52,66 @@ def qualitycontrol(raw_data, buoy):
         # soft range check
         flag_data[parameter] = qc.range_check_climate(raw_data[parameter], climate_limits[parameter], flag_data[parameter])
 
-    #Significance wave height vs Max wave height
-    flag_data[["wvht", "wmax"]] = qc.wvht_wmax_check(raw_data[["wvht", "wmax"]], flag_data[["wvht", "wmax"]])
+    # #Significance wave height vs Max wave height
+    # flag_data[["wvht", "wmax"]] = qc.wvht_wmax_check(raw_data[["wvht", "wmax"]], flag_data[["wvht", "wmax"]])
 
-    #Wind speed vs Gust speed
-    flag_data[["wspd1", "gust1", "wspd1"]] = qc.wind_speed_gust_check(raw_data[["wspd1", "gust1", "wspd1"]], flag_data[["wspd1", "gust1", "wspd1"]])
-    flag_data[["wspd2", "gust2", "wspd2"]] = qc.wind_speed_gust_check(raw_data[["wspd2", "gust2", "wspd2"]], flag_data[["wspd2", "gust2", "wspd2"]])
+    # #Wind speed vs Gust speed
+    # flag_data[["wspd1", "gust1", "wspd1"]] = qc.wind_speed_gust_check(raw_data[["wspd1", "gust1", "wspd1"]], flag_data[["wspd1", "gust1", "wspd1"]])
+    # flag_data[["wspd2", "gust2", "wspd2"]] = qc.wind_speed_gust_check(raw_data[["wspd2", "gust2", "wspd2"]], flag_data[["wspd2", "gust2", "wspd2"]])
 
-    #Dew point and Air temperature check
-    flag_data[["dewp", "atmp"]] = qc.dewp_atmp_check(raw_data[["dewp", "atmp"]], flag_data[["dewp", "atmp"]])
+    # #Dew point and Air temperature check
+    # flag_data[["dewp", "atmp"]] = qc.dewp_atmp_check(raw_data[["dewp", "atmp"]], flag_data[["dewp", "atmp"]])
 
-    #Check of effects of battery voltage in sensors
-    flag_data["pres"] = qc.bat_sensor_check(raw_data[["pres", "battery"]], flag_data["pres"])
+    # #Check of effects of battery voltage in sensors
+    # flag_data["pres"] = qc.bat_sensor_check(raw_data[["pres", "battery"]], flag_data["pres"])
 
-    #Stucksensorcheck
-    for parameter in parameters:
-        flag_data[parameter] = qc.stuck_sensor_check(raw_data[parameter], qc.stuck_limits(), flag_data[parameter])
-
-
-    # comparison with scaterometer data
-    (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
-        (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
+    # #Stucksensorcheck
+    # for parameter in parameters:
+    #     flag_data[parameter] = qc.stuck_sensor_check(raw_data[parameter], qc.stuck_limits(), flag_data[parameter])
 
 
-    # best anemometer
-    (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
-        (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
-
-    #Time continuity check
-    flag_data["wvht"] = qc.t_continuity_check(raw_data["wvht"], sigma_limits["wvht"], flag_data["wvht"])
-    flag_data["humi"] = qc.t_continuity_check(raw_data["humi"], sigma_limits["humi"], flag_data["humi"])
-    flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
-    flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
-    flag_data["atmp"] = qc.t_continuity_check(raw_data["atmp"], sigma_limits["atmp"], flag_data["atmp"])
-    flag_data["wspd"] = qc.t_continuity_check(raw_data["wspd"], sigma_limits["wspd"], flag_data["wspd"])
-    flag_data["wtmp"] = qc.t_continuity_check(raw_data["wtmp"], sigma_limits["wtmp"], flag_data["wtmp"])
+    # # comparison with scaterometer data
+    # (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
+    #     (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
 
 
-    #Frontal passage exception 1 for time continuity
-    flag_data["atmp"] = qc.front_except_check1(raw_data["wdir"], flag_data[["wdir", "atmp"]])
+    # # best anemometer
+    # (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
+    #     (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
 
-    # (Wdirflag,Wdirflagid)=qc.frontexcepcheck2(Epoch,Wdir,Wdirflag,Atmpflag,Atmpflagid)
-
-    #Frontal passage exception 3 for time continuity
-    flag_data["atmp"] = qc.front_except_check3(raw_data[["wspd", "atmp"]], flag_data[["wspd", "atmp"]])
-
-    #Frontal passage exception 4 for time continuity
-    flag_data["wspd"] = qc.front_except_check4(raw_data["pres"], flag_data[["pres", "wdir"]])
-
-    #Frontal passage exception 5 for time continuity
-    flag_data["pres"] = qc.front_except_check5(raw_data["pres"], flag_data["pres"])
-
-    #Frontal passage exception 6 for time continuity
-    flag_data["wvht"] = qc.front_except_check6(raw_data["wspd"], flag_data[["wspd", "wvht"]])
+    # #Time continuity check
+    # flag_data["wvht"] = qc.t_continuity_check(raw_data["wvht"], sigma_limits["wvht"], flag_data["wvht"])
+    # flag_data["humi"] = qc.t_continuity_check(raw_data["humi"], sigma_limits["humi"], flag_data["humi"])
+    # flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
+    # flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
+    # flag_data["atmp"] = qc.t_continuity_check(raw_data["atmp"], sigma_limits["atmp"], flag_data["atmp"])
+    # flag_data["wspd"] = qc.t_continuity_check(raw_data["wspd"], sigma_limits["wspd"], flag_data["wspd"])
+    # flag_data["wtmp"] = qc.t_continuity_check(raw_data["wtmp"], sigma_limits["wtmp"], flag_data["wtmp"])
 
 
-    #related measurement check
-    if Cvel1flag[i]==4 and Cdir1flag[i]!=4:
-        Cdir1flag[i]=4
-        Cdir1flagid[i]='12'
+    # #Frontal passage exception 1 for time continuity
+    # flag_data["atmp"] = qc.front_except_check1(raw_data["wdir"], flag_data[["wdir", "atmp"]])
 
-    if Cvel1flag[i]!=4 and Cdir1flag[i]==4:
-        Cvel1flag[i]=4
-        Cvel1flagid[i]='12'
+    # # (Wdirflag,Wdirflagid)=qc.frontexcepcheck2(Epoch,Wdir,Wdirflag,Atmpflag,Atmpflagid)
 
-    if Cvel2flag[i]==4 and Cdir2flag[i]!=4:
-        Cdir2flag[i]=4
-        Cdir2flagid[i]='12'
+    # #Frontal passage exception 3 for time continuity
+    # flag_data["atmp"] = qc.front_except_check3(raw_data[["wspd", "atmp"]], flag_data[["wspd", "atmp"]])
 
-    if Cvel2flag[i]!=4 and Cdir2flag[i]==4:
-        Cvel2flag[i]=4
-        Cvel2flagid[i]='12'
+    # #Frontal passage exception 4 for time continuity
+    # flag_data["wspd"] = qc.front_except_check4(raw_data["pres"], flag_data[["pres", "wdir"]])
 
-    if Cvel3flag[i]==4 and Cdir3flag[i]!=4:
-        Cdir3flag[i]=4
-        Cdir3flagid[i]='12'
+    # #Frontal passage exception 5 for time continuity
+    # flag_data["pres"] = qc.front_except_check5(raw_data["pres"], flag_data["pres"])
 
-    if Cvel3flag[i]!=4 and Cdir3flag[i]==4:
-        Cvel3flag[i]=4
-        Cvel3flagid[i]='12'
+    # #Frontal passage exception 6 for time continuity
+    # flag_data["wvht"] = qc.front_except_check6(raw_data["wspd"], flag_data[["wspd", "wvht"]])
 
-    if Gustflag[i]!=4 and Wspdflag[i]==4 and Wdirflag[i]!=4:
-        Gustflag[i]=4
-        Wdirflag[i]=4
-        Gustflagid[i]='12'
-        Wdirflagid[i]='12'
 
-    if Gustflag[i]==4 and Wspdflag[i]!=4 and Wdirflag[i]!=4:
-        Wspdflag[i]=4
-        Wdirflag[i]=4
-        Wspdflagid[i]='12'
-        Wdirflagid[i]='12'
-
-    if Gustflag[i]!=4 and Wspdflag[i]!=4 and Wdirflag[i]==4:
-        Gustflag[i]=4
-        Wspdflag[i]=4
-        Gustflagid[i]='12'
-        Wspdflagid[i]='12'
-
-    if Gustflag[i]==4 and Wspdflag[i]==4 and Wdirflag[i]!=4:
-        Wdirflag[i]=4
-        Wdirflagid[i]='12'
-
-    if Gustflag[i]!=4 and Wspdflag[i]==4 and Wdirflag[i]==4:
-        Gustflag[i]=4
-        Gustflagid[i]='12'
-
-    if Gustflag[i]==4 and Wspdflag[i]!=4 and Wdirflag[i]==4:
-        Wspdflag[i]=4
-        Wspdflagid[i]='12'
+    # #related measurement check
+    # flag_data[["cvel1","cdir1"]] = qc.front_except_check6(flag_data[["cvel1", "cdir1"]])
+    # flag_data[["cvel2","cdir2"]] = qc.front_except_check6(flag_data[["cvel2", "cdir2"]])
+    # flag_data[["cvel3","cdir3"]] = qc.front_except_check6(flag_data[["cvel3", "cdir3"]])
+    # flag_data[["gust","wspd", "wdir"]] = qc.front_except_check6(flag_data[["gust","wspd", "wdir"]])
 
     return flag_data, raw_data
 

@@ -116,7 +116,14 @@ def range_check(var,limits,flag):
 # Return: flag, idf
 ###############################################################################
 
-def range_check_clima(var,limits,flag):
+def range_check_climate(var,limits,flag):
+
+    flag[var < limits[0]] = 9 if flag  == 0
+    flag[var > limits[1]] = 9 if flag  == 0
+
+    return flag
+
+def range_check_std(var,limits,flag):
 
     flag[var < limits[0]] = 9 if flag  == 0
     flag[var > limits[1]] = 9 if flag  == 0
@@ -1318,6 +1325,19 @@ def frontexcepcheck6(Epoch,winds,flags,idfwh,flagwh):
     return flagwh,idfwh
 
     #end of Frontal excepion 6
+
+#TODO asdasdas
+def related 1(Epoch,winds,flags,idfwh,flagwh):
+
+    for i in range(0, len(Epoch)):
+        if winds[i]>=15 and flags[i]!=4 and idfwh[i]=='8':
+
+
+    flag_data[["gust","wspd", "wdir"]] = qc.front_except_check6(flag_data[["gust","wspd", "wdir"]])
+
+
+        Cvel3flagid[i]='12'
+
 
 
 #############################################################
