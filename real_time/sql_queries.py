@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pandas.io import sql
 import sqlalchemy
-
+from time_codes import *
 
 
 def connect_db(user_config):
@@ -109,7 +109,7 @@ def select_raw_data_bd(buoy, user_config):
     raw_data = []
     time_last_month = last_month()
 
-    cur.execute("SELECT * FROm argos_bruto wheRe argos_id = %s and data >= '%s' \
+    cur.execute("SELECT * FROm pnboia_raw_rt wheRe argos_id = %s and data >= '%s' \
     ORdeR by data" % (buoy, time_last_month))
 
     for row in cur.fetchall():

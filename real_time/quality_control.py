@@ -7,33 +7,33 @@ Created on Thu Jun 05 14:47:23 2014
 
 import numpy as np
 from numpy import *
-import '../qc_checks/ocean_data_qc.py' as qc
-
+import ocean_data_qc as qc
+import limits
 
 
 def arredondar(num):
     return float( '%.0f' % ( num ) )
 
 
-def definition_flag_pandas()
+def definition_flag_pandas(df):
 
-    flag_data = raw_data [['wspd1', 'gust1', 'wdir1', 'wspd2', 'gust2',
+    flag_data = df [['wspd1', 'gust1', 'wdir1', 'wspd2', 'gust2',
        'wdir2', 'atmp', 'humi', 'dewp', 'pres', 'wtmp', 'bhead', 'arad',
        'cvel1', 'cdir1', 'cvel2', 'cdir2', 'cvel3', 'cdir3', 'wvht', 'wmax',
        'dpd', 'mwd', 'spred']] * 0
 
-    flag_data = flag_data.replace(np.NaN, 0).astype(int)
+    flag_data = flag_data.replace(np.nan, 0).astype(int)
 
     return flag_data
 
-def qualitycontrol(raw_data, buoy):
+def qualitycontrol(df, buoy):
 
-    range_limits = qc.range_limits()
-    sigma_limits = qc.sigma_limits()
-    mis_value_limits = qc.mis_value_limits()
-    climate_limits = qc.climate_limits()
+    range_limits = limits.range_limits
+    sigma_limits = limits.sigma_limits
+    mis_value_limits = limits.mis_value_limits
+    climate_limits = limits.climate_limits
 
-    flag_data = definition_flag_pandas()
+    flag_data = definition_flag_pandas(df)
 
     ##############################################
     #RUN THE QC CHECKS

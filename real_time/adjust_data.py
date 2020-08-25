@@ -1,6 +1,8 @@
 import pandas as pd
 import time_codes
 import numpy as np
+from datetime import datetime
+import time_codes
 
 def adjust_data(raw_data):
 
@@ -75,12 +77,12 @@ def adjust_data(raw_data):
             hour0.append(int(data[4].hour))
 
             sensor00.append(int(float(data[5])))
-            if data[2]!=np.nan:
+            if data[2] != np.nan and data[2] != '-9999':
                 lat.append(float(data[2]))
                 lon.append(float(data[3])-360)
             else:
-                lat.append((data[2]))
-                lon.append((data[3]))
+                lat.append(np.nan)
+                lon.append(np.nan)
 
             year.append(int(float(year0[-1])))
             month.append(int(float(month0[-1])))
@@ -241,27 +243,24 @@ def adjust_data(raw_data):
 
     df['data'] = [datetime.strptime(str(int(df.year[i])) +  \
         str(int(df.month[i])).zfill(2) + str(int(df.day[i])).zfill(2) + \
-        str(int(df.hour[i])).zfill(2),'%Y-%m-%d %H:%M:%S') for i in range(len(df))]
+        str(int(df.hour[i])).zfill(2),'%Y%m%d%H') for i in range(len(df))]
 
     df = df.set_index('data')
 
-    gmtime = time.codes.gmtime()
+    gmtime = time_codes.gmtime()
 
-    last_month = time.codes.last_month()
+    last_month = time_codes.last_month()
 
     df = df.loc[last_month: gmtime]
 
-    return df.sort_values(by=['index', 'sensor00'])
+    return df.reset_index().sort_values(by=['data', 'sensor00']).set_index('data')
 
+def adjust_different_message_data(df):
 
-def adjust_diffente_messages_data(df):
+    df = df.reset_index().drop_duplicates(subset=['data', 'sensor00'], keep='first').sort_values(by=['data', 'sensor00']).set_index('data')
 
-    df = df.loc[:,~df.columns.duplicated()]
-
-    df = df.reset_index().drop_duplicates(subset=['index', 'sensor00', keep='first').set_index('index').sort_values(by=['index', 'sensor00'])
-
-    for i in range(len(df))
-        if df.index[i] == df.index[i + 1]
+    for i in range(len(df) - 1):
+        if df.index[i] == df.index[i + 1]:
             df['lat'][i] = df['lat'][i+1]
             df['lon'][i] = df['lon'][i+1]
             df['sensor00'][i] = df['sensor00'][i+1]
@@ -291,7 +290,7 @@ def adjust_diffente_messages_data(df):
             df['spred'][i] = df['spred'][i+1]
             df['bhead'][i] = df['bhead'][i+1]
 
-    df = df.reset_index().drop_duplicates(subset=['index', 'sensor00', keep='first').set_index('index').sort_values(by=['index', 'sensor00'])
+    df = df.reset_index().drop_duplicates(subset=['data', 'sensor00'], keep='first').sort_values(by=['data', 'sensor00']).set_index('data')
 
     return df
 
@@ -299,7 +298,7 @@ def rotate_data(df):
 
     df['cdir1'][flag['cdir1'] == 0] = df ['cdir1'] - (decmag+(decvar*aw))
 
-    df['cdir1'][df['cdir1' < 0] = df['cdir1'][df['cdir1' < 0] +360
+    df['cdir1'][df['cdir1' < 0]] = df['cdir1'][df['cdir1' < 0]] +360
 
     df['cdir2'][flag['cdir2'] == 0] = df ['cdir2'] - (decmag+(decvar*aw))
     df['cdir3'][flag['cdir3'] == 0] = df ['cdir3'] - (decmag+(decvar*aw))
