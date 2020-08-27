@@ -28,83 +28,93 @@ def definition_flag_pandas(df):
 
 def qualitycontrol(df, buoy):
 
-    range_limits = limits.range_limits
-    sigma_limits = limits.sigma_limits
-    mis_value_limits = limits.mis_value_limits
-    climate_limits = limits.climate_limits
-
     flag_data = definition_flag_pandas(df)
 
     ##############################################
     #RUN THE QC CHECKS
     ##############################################
 
-
-    #Missing value check
     parameters = ['wdir1', 'wspd1', 'gust1', 'wdir2', 'wspd2', 'gust2', 'wvht', 'wmax', 'dpd', 'mwd', 'pres', 'humi', 'atmp', 'wtmp', 'dewp', 'cvel1', 'cdir1', 'cvel2', 'cdir2', 'cvel3', 'cdir3']
     for parameter in parameters:
         # missing value checks
-        flag_data[parameter] = qc.mis_value_check(raw_data[parameter], mis_value_limits[parameter], flag_data[parameter])
-
+        flag_data = qc.mis_value_check(df, limits.mis_value_limits, flag_data, parameter)
         # coarse range check
-        flag_data[parameter] = qc.range_check(raw_data[parameter], range_limits[parameter], flag_data[parameter])
-
+        flag_data = qc.range_check(df, limits.range_limits, flag_data, parameter)
         # soft range check
-        flag_data[parameter] = qc.range_check_climate(raw_data[parameter], climate_limits[parameter], flag_data[parameter])
-
-    # #Significance wave height vs Max wave height
-    # flag_data[["wvht", "wmax"]] = qc.wvht_wmax_check(raw_data[["wvht", "wmax"]], flag_data[["wvht", "wmax"]])
-
-    # #Wind speed vs Gust speed
-    # flag_data[["wspd1", "gust1", "wspd1"]] = qc.wind_speed_gust_check(raw_data[["wspd1", "gust1", "wspd1"]], flag_data[["wspd1", "gust1", "wspd1"]])
-    # flag_data[["wspd2", "gust2", "wspd2"]] = qc.wind_speed_gust_check(raw_data[["wspd2", "gust2", "wspd2"]], flag_data[["wspd2", "gust2", "wspd2"]])
-
-    # #Dew point and Air temperature check
-    # flag_data[["dewp", "atmp"]] = qc.dewp_atmp_check(raw_data[["dewp", "atmp"]], flag_data[["dewp", "atmp"]])
-
-    # #Check of effects of battery voltage in sensors
-    # flag_data["pres"] = qc.bat_sensor_check(raw_data[["pres", "battery"]], flag_data["pres"])
-
-    # #Stucksensorcheck
-    # for parameter in parameters:
-    #     flag_data[parameter] = qc.stuck_sensor_check(raw_data[parameter], qc.stuck_limits(), flag_data[parameter])
+        flag_data = qc.range_check_climate(df, limits.climate_limits, flag_data, parameter)
+        # soft range check
+        # flag_data = qc.range_check_std(df, limits.std_mean_values, flag_data, parameter)
 
 
-    # # comparison with scaterometer data
-    # (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
-    #     (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
+
+    #Significance wave height vs Max wave height
+    flag_data = qc.wvht_wmax_check(df, flag_data, "wvht", "wmax")
+
+    #Wind speed vs Gust speed
+    flag_data = qc.wind_speed_gust_check(df, flag_data, "wspd1", "gust1")
+    flag_data = qc.wind_speed_gust_check(df, flag_data, "wspd2", "gust2")
 
 
-    # # best anemometer
-    # (raw_data[["wdir", "wspd", "gust"]], flag_data[["wdir", "wspd", "gust"]]) = qc.related_meas_check \
-    #     (raw_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]], flag_data[["wdir1", "wspd1", "gust1", "wdir2", "wspd2", "gust2"]])
+    #Dew point and Air temperature check
+    (flag_data, df) = qc.dewp_atmp_check(df, flag_data, "dewp", "atmp")
 
-    # #Time continuity check
-    # flag_data["wvht"] = qc.t_continuity_check(raw_data["wvht"], sigma_limits["wvht"], flag_data["wvht"])
-    # flag_data["humi"] = qc.t_continuity_check(raw_data["humi"], sigma_limits["humi"], flag_data["humi"])
-    # flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
-    # flag_data["pres"] = qc.t_continuity_check(raw_data["pres"], sigma_limits["pres"], flag_data["pres"])
-    # flag_data["atmp"] = qc.t_continuity_check(raw_data["atmp"], sigma_limits["atmp"], flag_data["atmp"])
-    # flag_data["wspd"] = qc.t_continuity_check(raw_data["wspd"], sigma_limits["wspd"], flag_data["wspd"])
-    # flag_data["wtmp"] = qc.t_continuity_check(raw_data["wtmp"], sigma_limits["wtmp"], flag_data["wtmp"])
+    #Check of effects of battery voltage in sensors
+    flag_data = qc.bat_sensor_check(df, flag_data, "battery", "pres")
+
+    #Stucksensorcheck
+    for parameter in parameters:
+        flag_data = qc.stuck_sensor_check(df, limits.stuck_limits, flag_data, parameter)
 
 
-    # #Frontal passage exception 1 for time continuity
-    # flag_data["atmp"] = qc.front_except_check1(raw_data["wdir"], flag_data[["wdir", "atmp"]])
+    # comparison with scaterometer data
+    parameters = ["wspd1", "wspd2", "wdir1", "wdir2", "gust1", "gust2"]
+    flag_data = qc.ascat_anemometer_comparison(df, flag_data, parameters, buoy["nome"])
 
-    # # (Wdirflag,Wdirflagid)=qc.frontexcepcheck2(Epoch,Wdir,Wdirflag,Atmpflag,Atmpflagid)
+    df = qc.convert_10_meters(df, flag_data, 4.7, "wspd1", "gust1")
 
-    # #Frontal passage exception 3 for time continuity
-    # flag_data["atmp"] = qc.front_except_check3(raw_data[["wspd", "atmp"]], flag_data[["wspd", "atmp"]])
+    df = qc.convert_10_meters(df, flag_data, 3.4, "wspd2", "gust2")
+
+    (df, flag_data) = qc.related_meas_check(df, flag_data, parameters)
+
+    var = df
+    flag = flag_data
+    limit = limits.continuity_limits
+    sigma = limits.sigma_limits
+    flag['tmp_forward'] = 0
+    flag['tmp_backward'] = 0
+    parameter = "humi"
+
+    flag['tmp_forward'] = 0
+    flag['tmp_backward'] = 0
+
+    #Time continuity check
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "wvht")
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "humi")
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "pres")
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "atmp")
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "wspd")
+    flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "wtmp")
+
+
+
+
+   #Frontal passage exception 1 for time continuity
+    flag_data = qc.front_except_check1(df, flag_data, "wdir", "atmp")
+    # (Wdirflag,Wdirflagid)=qc.frontexcepcheck2(Epoch,Wdir,Wdirflag,Atmpflag,Atmpflagid)
+
+    #Frontal passage exception 3 for time continuity
+    flag_data = qc.front_except_check3(df, flag_data, "wspd", "atmp")
+
+    # stop
 
     # #Frontal passage exception 4 for time continuity
-    # flag_data["wspd"] = qc.front_except_check4(raw_data["pres"], flag_data[["pres", "wdir"]])
+    # flag_data["wspd"] = qc.front_except_check4(df["pres"], flag_data[["pres", "wdir"]])
 
     # #Frontal passage exception 5 for time continuity
-    # flag_data["pres"] = qc.front_except_check5(raw_data["pres"], flag_data["pres"])
+    # flag_data["pres"] = qc.front_except_check5(df["pres"], flag_data["pres"])
 
     # #Frontal passage exception 6 for time continuity
-    # flag_data["wvht"] = qc.front_except_check6(raw_data["wspd"], flag_data[["wspd", "wvht"]])
+    # flag_data["wvht"] = qc.front_except_check6(df["wspd"], flag_data[["wspd", "wvht"]])
 
 
     # #related measurement check
@@ -113,7 +123,7 @@ def qualitycontrol(df, buoy):
     # flag_data[["cvel3","cdir3"]] = qc.front_except_check6(flag_data[["cvel3", "cdir3"]])
     # flag_data[["gust","wspd", "wdir"]] = qc.front_except_check6(flag_data[["gust","wspd", "wdir"]])
 
-    return flag_data, raw_data
+    return flag_data, df
 
 
 def qualitycontrol_adcp(Epoch,cvel1,cdir1,cvel2,cdir2,cvel3,cdir3,cvel4,cdir4,cvel5,cdir5,cvel6,cdir6,cvel7,cdir7,cvel8,cdir8,cvel9,cdir9,cvel10,cdir10,cvel11,cdir11,cvel12,cdir12,cvel13,cdir13,cvel14,cdir14,cvel15,cdir15,cvel16,cdir16,cvel17,cdir17,cvel18,cdir18,cvel19,cdir19,cvel20,cdir20):

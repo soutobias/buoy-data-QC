@@ -121,28 +121,23 @@ def select_raw_data_bd(buoy, user_config):
 
 def delete_qc_old_data(initial_time, buoy, user_config):
 
-    x=time.gmtime(int(tempoini))
-
-    tempo1=str(x.tm_year)+'-'+str(x.tm_mon).zfill(2)+'-'+str(x.tm_mday).zfill(2)+' 00:00:00'
-
     db = connect_db(user_config)
 
     cur=db.cursor()
 
-    cur.execute("DELETE FROm simcosta WHERE datahora>='%s' AND id = '%s'"% (tempo1,boia))
+    cur.execute("DELETE FROm pnboia WHERE data>='%s' AND estacao_id = '%s'"% (initial_time, buoy))
     # cur.execute("SELECT wmo FROm deriva_estacao")
     db.commit()
     cur.close()
     db.close()
 
-    return
+def insert_qc_data_bd(qc_data, user_config):
 
-def insert_qc_data_bd(qc_data, buoy, user_config):
-
-    con = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}'.
+    con = sqlalchemy.create_engine('mysql+mysqlconnector://{0}:{1}@{2}/{3}?auth_plugin=mysql_native_password'.
                                             format(user_config.username,
                                                 user_config.password,
                                                 user_config.host,
                                                 user_config.database))
+
 
     qc_data.to_sql(con=con, name='pnboia', if_exists='append')

@@ -7,6 +7,7 @@ created on Tue may 03 10:08:32 2016
 from quality_control import *
 import sql_queries
 import time_codes
+from adjust_data import *
 
 import sys
 import os
@@ -29,8 +30,12 @@ for buoy in buoys:
 
     (flag_data, qc_data) = qualitycontrol(adjusted_data, buoy)
 
-    qc_data = rotate_data(qc_data)
+    qc_data = rotate_data(qc_data, flag_data, buoy)
 
-    delete_qc_old_data(initial_time, buoy):
+    sql_queries.delete_qc_old_data(str(qc_data.index[0]), buoy["estacao_id"], user_config)
 
-    insert_qc_data_bd(qc_data, buoy, user_config)
+    qc_data["estacao_id"] = buoy["estacao_id"]
+
+    qc_data.reset_index().set_index(["data", "estacao_id"])
+
+    sql_queries.insert_qc_data_bd(qc_data, user_config)

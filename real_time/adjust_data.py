@@ -253,6 +253,12 @@ def adjust_data(raw_data):
 
     df = df.loc[last_month: gmtime]
 
+    del df['year']
+    del df['month']
+    del df['day']
+    del df['hour']
+    del df['minute']
+
     return df.reset_index().sort_values(by=['data', 'sensor00']).set_index('data')
 
 def adjust_different_message_data(df):
@@ -294,15 +300,26 @@ def adjust_different_message_data(df):
 
     return df
 
-def rotate_data(df):
+def rotate_data(df, flag, buoy):
 
-    df['cdir1'][flag['cdir1'] == 0] = df ['cdir1'] - (decmag+(decvar*aw))
+    df['tmp_dec'] = (df.index.year - 2002) * float(buoy["vardeclinacao"]) + float(buoy["declinacao"])
 
-    df['cdir1'][df['cdir1' < 0]] = df['cdir1'][df['cdir1' < 0]] +360
+    df.loc[flag['cdir1'] == 0, "cdir1"] = df['cdir1'] - df['tmp_dec']
+    df.loc[df["cdir1"] < 0, "cdir1"] = df["cdir1"] + 360
 
-    df['cdir2'][flag['cdir2'] == 0] = df ['cdir2'] - (decmag+(decvar*aw))
-    df['cdir3'][flag['cdir3'] == 0] = df ['cdir3'] - (decmag+(decvar*aw))
-    df['wdir'][flag['wdir'] == 0] = df ['wdir'] - (decmag+(decvar*aw))
-    df['mwd'][flag['mwd'] == 0] = df ['mwd'] - (decmag+(decvar*aw))
+    df.loc[flag['cdir2'] == 0, "cdir2"] = df['cdir2'] - df['tmp_dec']
+    df.loc[df["cdir2"] < 0, "cdir2"] = df["cdir2"] + 360
+
+    df.loc[flag['cdir3'] == 0, "cdir3"] = df['cdir3'] - df['tmp_dec']
+    df.loc[df["cdir3"] < 0, "cdir3"] = df["cdir3"] + 360
+
+    df.loc[flag['wdir'] == 0, "wdir"] = df['wdir'] - df['tmp_dec']
+    df.loc[df["wdir"] < 0, "wdir"] = df["wdir"] + 360
+
+    df.loc[flag['mwd'] == 0, "mwd"] = df['mwd'] - df['tmp_dec']
+    df.loc[df["mwd"] < 0, "mwd"] = df["mwd"] + 360
+
+    del df['tmp_dec']
+    del df['sensor00']
 
     return df
