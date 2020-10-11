@@ -6,13 +6,13 @@ Python Version tested: Python 2.7.3
 Required Dependencies: Numpy, time
 
 Description: This module is designed to take Standard Meteorogical Data from
-NDBC website in form of time, Wdir, Wspd, Gst, Wvht, Dpd, Apd, Mwd, Pres, Atmp,
-Wtmp, Dewp, Vis and Tide, and perform QC checks based on NDBC's "Handbook of
+NDBC website in form of time, Wdir, Wspd, Gst, swvht, Dpd, Apd, Mwd, Pres, Atmp,
+Wtmp, dewpt, Vis and Tide, and perform QC checks based on NDBC's "Handbook of
 Automated Data Quality Control Checks and Procedures". Each check generates a QC
 table for the archive used, following the QC Numbering.
 5 indicates that the time listed is not valid and is in the future.
 
-Required Input: EPOCH Time, Wvht(m), Dpd(s), Apd(s), Mwd(degrees)
+Required Input: EPOCH Time, swvht(m), Dpd(s), Apd(s), Mwd(degrees)
 
 Checks Performed:
     Valid Time
@@ -156,12 +156,12 @@ def range_check_std(var, limits, flag, parameter):
 #
 # Required input:
 # - Epoch: Data/Time in Epoch date
-# - wvht: wave significant height
-# - wmax: max wave height
-# - flagv: matrix of flag for wvht
-# - idfv= flag id for wvht. '4' --> letter that represents the flag
-# - flagm: matrix of flag for wmax
-# - idfm= flag id for wmax. '4' --> letter that represents the flag
+# - swvht: wave significant height
+# - mxwvht: max wave height
+# - flagv: matrix of flag for swvht
+# - idfv= flag id for swvht. '4' --> letter that represents the flag
+# - flagm: matrix of flag for mxwvht
+# - idfm= flag id for mxwvht. '4' --> letter that represents the flag
 #
 # Required checks: Range Check, Missing value check
 #
@@ -169,15 +169,15 @@ def range_check_std(var, limits, flag, parameter):
 ###############################################################################
 
 
-def wvht_wmax_check(var, flag, wvht_name, wmax_name):
+def swvht_mxwvht_check(var, flag, swvht_name, mxwvht_name):
 
-    flag.loc[(var[wvht_name] > var[wmax_name]) & (flag[wvht_name] == 0), wvht_name] = 4
-    flag.loc[(var[wvht_name] > var[wmax_name]) & (flag[wmax_name] == 0), wmax_name] = 4
+    flag.loc[(var[swvht_name] > var[mxwvht_name]) & (flag[swvht_name] == 0), swvht_name] = 4
+    flag.loc[(var[swvht_name] > var[mxwvht_name]) & (flag[mxwvht_name] == 0), mxwvht_name] = 4
 
     return flag
 
     #####################
-    #end wvhtwmax check section
+    #end swvhtmxwvht check section
 
 
 ###############################################################################
@@ -215,12 +215,12 @@ def wind_speed_gust_check(var, flag, wspd_name, gust_name):
 
 ###############################################################################
 # Dew point x Air temperature Check
-# Compares if the Dewpoint values is higher than Air temperature values.
-# If so, dewp value will be changed to atmp value and data will be soft flagged
+# Compares if the dewptoint values is higher than Air temperature values.
+# If so, dewpt value will be changed to atmp value and data will be soft flagged
 #
 # Required input:
 # - Epoch: Data/Time in Epoch date
-# - dewp: dew point
+# - dewpt: dew point
 # - atmp: air temperatura
 # - flagd: matrix of flag for dew point
 # - flaga: matrix of flag for air temperature
@@ -232,15 +232,15 @@ def wind_speed_gust_check(var, flag, wspd_name, gust_name):
 #
 ###############################################################################
 
-def dewp_atmp_check(var, flag, dewp_name, atmp_name):
+def dewpt_atmp_check(var, flag, dewpt_name, atmp_name):
 
-    flag.loc[(var[dewp_name] > var[atmp_name]) & (flag[dewp_name] == 0)  & (flag[atmp_name] == 0), dewp_name] = 51
-    var.loc[(flag[dewp_name] == 51), dewp_name] = var[atmp_name]
+    flag.loc[(var[dewpt_name] > var[atmp_name]) & (flag[dewpt_name] == 0)  & (flag[atmp_name] == 0), dewpt_name] = 51
+    var.loc[(flag[dewpt_name] == 51), dewpt_name] = var[atmp_name]
 
     return flag, var
 
     #####################
-    #end dewpoint atmp check section
+    #end dewptoint atmp check section
 
 ###############################################################################
 # Battery x Air Pressure Check
@@ -908,8 +908,8 @@ def frontexcepcheck5(Epoch,pres,flagp,idfp):
 # - Epoch: Data/Time in Epoch date
 # - winds: wind speed for the best anemometer
 # - flags: wind speed flag for the best anemometer
-# - flagwh: wvht flag
-# - idfwh: flag id for wvht. '53' --> letter that represents the flag
+# - flagwh: swvht flag
+# - idfwh: flag id for swvht. '53' --> letter that represents the flag
 #
 # Return: flagwh,idfwh
 
@@ -939,21 +939,21 @@ def related1(Epoch,winds,flags,idfwh,flagwh):
     flag_data[["gust","wspd", "wdir"]] = qc.front_except_check6(flag_data[["gust","wspd", "wdir"]])
 
 
-    Cvel3flagid[i]='12'
+    cspd3flagid[i]='12'
 
 
 #######################################################################################
-# Wvht x Average Period check
+# swvht x Average Period check
 # Compare the wave significant height and Average period
 # If the value do not change, it will be flagged
 #
 # Required input:
 # - Epoch: Data/Time in Epoch date
 # - Apd: Average wave period
-# - Wvht: Significant wave height
+# - swvht: Significant wave height
 # - flagt: matrix of flag for Apd
-# - flagh: matrix of flag for Wvht
-# - idf= flag id for Wvht. '7' --> letter that represents the flag
+# - flagh: matrix of flag for swvht
+# - idf= flag id for swvht. '7' --> letter that represents the flag
 #
 # Required checks: Range Check, Missing value check
 #
@@ -961,7 +961,7 @@ def related1(Epoch,winds,flags,idfwh,flagwh):
 #
 ########################################################################################
 
-def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
+def hstscheck(Epoch, Apd, swvht, flagt,flagh,idf):
 
     htresh=[0]*len(Epoch)
     for i in range(len(Epoch)):
@@ -976,7 +976,7 @@ def hstscheck(Epoch, Apd, Wvht, flagt,flagh,idf):
 
     for i in range(len(Epoch)):
         if flagt[i]!=4 and flagh[i]!=4:
-            if Wvht[i] > htresh[i]:
+            if swvht[i] > htresh[i]:
                flagh[i] = 4
                idf[i]='7'
 
@@ -1069,28 +1069,28 @@ def ncepmodelcheck(Epoch,Pres,Atmp,Wdir,Wspd,Presflag,Atmpflag,Wdirflag,Wspdflag
 # Required checks: Range
 #
 ########################################################################################
-def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag, Dpdflag, Apdflag,Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag):
+def climarangecheck(Epoch, swvht, Dpd, Apd,Wspd,Gust,Pres,dewpt,Atmp,Wtmp,swvhtflag, Dpdflag, Apdflag,Wspdflag, Gustflag, Presflag, dewptflag, Atmpflag, Wtmpflag):
 
-# Definition of the ranges. For example: msdWvht=[0,5]. It means that the
+# Definition of the ranges. For example: msdswvht=[0,5]. It means that the
 # climatological mean is 0 and the standard deviation is 20
 
-    msdWvht=[0,20]
+    msdswvht=[0,20]
     msdDpd=[1.95,26]
     msdApd=[0,26]
     msdWspd=[0,60]
     msdGust=[0,60]
     msdAtmp=[-40,60]
     msdPres=[500,1100]
-    msdDewp=[-30,40]
+    msddewpt=[-30,40]
     msdWtmp=[-4,30]
 
     for i in range(len(Epoch)):
 
-        if Wvht[i] > (msdWvht[0]+(3*msdWvht[1])) or Wvht[i] < (msdWvht[0]-(3*msdWvht[1])):
-           Wvhtflag[i] = 4
+        if swvht[i] > (msdswvht[0]+(3*msdswvht[1])) or swvht[i] < (msdswvht[0]-(3*msdswvht[1])):
+           swvhtflag[i] = 4
 
         else:
-           Wvhtflag[i] = 1
+           swvhtflag[i] = 1
 
     for i in range(len(Epoch)):
 
@@ -1142,11 +1142,11 @@ def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag
 
     for i in range(len(Epoch)):
 
-        if Dewp[i] > (msdDewp[0]+(3*msdDewp[1])) or Dewp[i] < (msdDewp[0]+(3*msdDewp[1])):
-           Dewpflag[i] = 4
+        if dewpt[i] > (msddewpt[0]+(3*msddewpt[1])) or dewpt[i] < (msddewpt[0]+(3*msddewpt[1])):
+           dewptflag[i] = 4
 
         else:
-           Dewpflag[i] = 1
+           dewptflag[i] = 1
 
     for i in range(len(Epoch)):
 
@@ -1157,7 +1157,7 @@ def climarangecheck(Epoch, Wvht, Dpd, Apd,Wspd,Gust,Pres,Dewp,Atmp,Wtmp,Wvhtflag
            Wtmpflag[i] = 1
 
 
-    return Wvhtflag, Dpdflag, Apdflag, Wspdflag, Gustflag, Presflag, Dewpflag, Atmpflag, Wtmpflag
+    return swvhtflag, Dpdflag, Apdflag, Wspdflag, Gustflag, Presflag, dewptflag, Atmpflag, Wtmpflag
     #end Range Check section
 
 #####################################################
