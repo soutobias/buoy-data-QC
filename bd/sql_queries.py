@@ -141,3 +141,5 @@ def insert_qc_data_bd(qc_data, user_config):
 
 
     qc_data.to_sql(con=con, name='pnboia', if_exists='append')
+
+    print('data inserted')
