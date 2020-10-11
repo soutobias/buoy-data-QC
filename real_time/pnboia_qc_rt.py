@@ -4,18 +4,25 @@ created on Tue may 03 10:08:32 2016
 
 @author: Tobias
 """
-from quality_control import *
-import sql_queries
-import time_codes
-from adjust_data import *
-
 import sys
 import os
+cwd = os.getcwd()
+sys.path.insert(0, cwd)
+sys.path.insert(0, cwd + '/../bd/')
+sys.path.insert(0, cwd + '/../limits/')
+sys.path.insert(0, cwd + '/../qc_checks/')
+
 from os.path import expanduser
 home = expanduser("~")
 sys.path.insert(0,home)
 import user_config1 as user_config
 os.chdir( user_config.path )
+
+
+from quality_control import *
+import sql_queries
+import time_codes
+from adjust_data import *
 
 buoys = sql_queries.working_buoys(user_config)
 

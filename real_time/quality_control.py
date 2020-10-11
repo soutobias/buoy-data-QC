@@ -76,17 +76,6 @@ def qualitycontrol(df, buoy):
 
     (df, flag_data) = qc.related_meas_check(df, flag_data, parameters)
 
-    var = df
-    flag = flag_data
-    limit = limits.continuity_limits
-    sigma = limits.sigma_limits
-    flag['tmp_forward'] = 0
-    flag['tmp_backward'] = 0
-    parameter = "humi"
-
-    flag['tmp_forward'] = 0
-    flag['tmp_backward'] = 0
-
     #Time continuity check
     flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "wvht")
     flag_data = qc.t_continuity_check(df, limits.sigma_limits, limits.continuity_limits, flag_data, "humi")
